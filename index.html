@@ -215,7 +215,7 @@
             min-height: 0; 
         }
         
-        /* FERRAMENTAS DO HEADER (BUSCA, LOJA E NOTIFICAÇÃO) */
+        /* FERRAMENTAS DO HEADER (BUSCA, LOJA, CONFIG E NOTIFICAÇÃO) */
         .header-tools { display: flex; align-items: center; gap: 15px; }
         
         .tool-btn { cursor: pointer; position: relative; color: var(--text-secondary); transition: 0.2s; font-size: 1.2rem; }
@@ -241,19 +241,23 @@
             font-size: 0.9rem; outline: none;
         }
         
-        /* NOTIFICAÇÕES */
+        /* NOTIFICAÇÕES E SETTINGS DROPDOWN */
         .notification-badge {
             position: absolute; top: -5px; right: -5px; background: var(--danger); color: white;
             font-size: 0.7rem; width: 18px; height: 18px; border-radius: 50%;
             display: flex; justify-content: center; align-items: center; font-weight: bold;
             opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
-        .notification-dropdown {
+        /* Classes reutilizadas para dropdown de Notificação e Configuração */
+        .notification-dropdown, .settings-dropdown {
             position: absolute; top: 40px; right: 0; width: 300px;
             background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
             box-shadow: 0 5px 15px var(--shadow); z-index: 100;
             display: none; max-height: 400px; overflow-y: auto;
         }
+        /* Ajuste específico para o menu de settings não sair da tela se precisar */
+        .settings-dropdown { width: 260px; right: -10px; }
+
         .notification-item {
             padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; align-items: center; color: var(--text);
         }
@@ -396,9 +400,11 @@
         #draft-list li:hover { border-color: var(--border); }
         #draft-list li span { flex: 1; margin-left: 10px; font-size: 0.9rem;}
         
-        /* Configurações e Ações */
+        /* Configurações (Agora dentro do dropdown) */
+        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; font-size: 0.9rem; background: var(--bg-element); padding: 10px; border-radius: 5px; color: var(--text);}
+        
+        /* Ações (Apenas botão enviar) */
         .quest-actions { margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px; flex-shrink: 0; }
-        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9rem; background: var(--bg-element); padding: 10px; border-radius: 5px; color: var(--text);}
         
         .btn-submit {
             width: 100%; background: var(--primary); color: white; padding: 15px;
@@ -659,6 +665,27 @@
                         <i class="fa-solid fa-store"></i>
                     </div>
 
+                    <div class="tool-btn" id="settingsBtn" title="Configurações">
+                        <i class="fa-solid fa-cog"></i>
+                        <div class="settings-dropdown" id="settingsDropdown">
+                            <div style="padding:10px; font-weight:bold; border-bottom:1px solid var(--border); color: var(--text);">Configurações</div>
+                            <div style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+                                <div class="config-row">
+                                    <span><i class="fa-regular fa-clock"></i> Fim do Turno:</span>
+                                    <input type="time" id="shiftEnd" value="18:00" style="background: var(--bg-input); border:1px solid var(--border); color: var(--text); padding: 5px; border-radius: 3px;">
+                                </div>
+                                <div class="config-row">
+                                    <span><i class="fa-solid fa-user-secret"></i> Modo Fantasma:</span>
+                                    <input type="checkbox" id="privateMode" style="width: 18px; height: 18px;">
+                                </div>
+                                <div class="config-row">
+                                    <span><i class="fa-solid fa-sun"></i> Tema Claro:</span>
+                                    <input type="checkbox" id="themeToggle" style="width: 18px; height: 18px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="tool-btn notification-container" id="notificationBtn" title="Notificações">
                         <i class="fa-solid fa-bell"></i>
                         <div class="notification-badge" id="notificationBadge">0</div>
@@ -701,22 +728,6 @@
                 </ul>
 
             <div class="quest-actions">
-                <div class="section-title" style="font-size: 1rem; border:none; margin-bottom: 10px;"><i class="fa-solid fa-sliders"></i> Configurações</div>
-                
-                <div class="config-row">
-                    <span><i class="fa-regular fa-clock"></i> Fim do Turno:</span>
-                    <input type="time" id="shiftEnd" value="18:00" style="background: var(--bg-input); border:1px solid var(--border); color: var(--text); padding: 5px; border-radius: 3px;">
-                </div>
-                <div class="config-row">
-                    <span><i class="fa-solid fa-user-secret"></i> Modo Fantasma:</span>
-                    <input type="checkbox" id="privateMode" style="width: 18px; height: 18px;">
-                </div>
-                
-                <div class="config-row">
-                    <span><i class="fa-solid fa-sun"></i> Tema Claro:</span>
-                    <input type="checkbox" id="themeToggle" style="width: 18px; height: 18px;">
-                </div>
-
                 <button class="btn-submit" id="btnSendReport">
                     <i class="fa-solid fa-paper-plane"></i> Enviar Daily
                 </button>
@@ -776,11 +787,14 @@
         // Tema Claro/Escuro
         const themeToggle = document.getElementById('themeToggle');
 
-        // Notificações & Pesquisa
+        // Notificações, Settings & Pesquisa
         const notificationBtn = document.getElementById('notificationBtn');
         const notificationDropdown = document.getElementById('notificationDropdown');
         const notificationBadge = document.getElementById('notificationBadge');
         const notificationList = document.getElementById('notificationList');
+
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsDropdown = document.getElementById('settingsDropdown');
         
         const toggleSearchBtn = document.getElementById('toggleSearchBtn');
         const searchContainer = document.getElementById('searchContainer');
@@ -856,11 +870,26 @@
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             const isVisible = notificationDropdown.style.display === 'block';
+            
+            // Fecha outros
+            settingsDropdown.style.display = 'none';
+            
             notificationDropdown.style.display = isVisible ? 'none' : 'block';
             if(!isVisible) {
                 unreadNotifications = 0;
                 notificationBadge.style.opacity = '0';
             }
+        });
+
+        // Toggle Settings (Novo)
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = settingsDropdown.style.display === 'block';
+
+            // Fecha outros
+            notificationDropdown.style.display = 'none';
+
+            settingsDropdown.style.display = isVisible ? 'none' : 'block';
         });
         
         // Mudar Avatar
@@ -877,6 +906,7 @@
         // Fecha dropdowns
         window.onclick = (e) => {
             if (!notificationBtn.contains(e.target)) notificationDropdown.style.display = 'none';
+            if (!settingsBtn.contains(e.target)) settingsDropdown.style.display = 'none';
         };
 
         // ==========================================================
