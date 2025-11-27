@@ -796,7 +796,9 @@
         let userInventory = {}; // { itemKey: true }
         let equippedItems = {}; // { border: 'x', title: 'y' }
         
-        let draftTasks = [];
+        // RECUPERA DO LOCAL STORAGE AO INICIAR
+        let draftTasks = JSON.parse(localStorage.getItem('savedDraftTasks')) || [];
+        
         let autoSendInterval = null;
         let unreadNotifications = 0;
         let allFeedData = []; 
@@ -816,6 +818,15 @@
         const shiftEndInput = document.getElementById('shiftEnd');
         const btnEditAvatar = document.getElementById('btnEditAvatar');
         
+        // RESTAURA O HORARIO SALVO
+        const savedShiftTime = localStorage.getItem('savedShiftTime');
+        if(savedShiftTime) shiftEndInput.value = savedShiftTime;
+
+        // SALVA O HORARIO AO MUDAR
+        shiftEndInput.addEventListener('change', () => {
+            localStorage.setItem('savedShiftTime', shiftEndInput.value);
+        });
+
         // Tema Claro/Escuro
         const themeToggle = document.getElementById('themeToggle');
 
@@ -1127,6 +1138,9 @@
                 loadUserStats();
                 startAutoSendMonitor();
                 listenForNotifications(); 
+                
+                // RESTAURA RASCUNHOS
+                renderDrafts();
             }
         });
 
@@ -1189,6 +1203,7 @@
                 `;
                 li.querySelector('.fa-xmark').onclick = () => {
                     draftTasks.splice(index, 1);
+                    localStorage.setItem('savedDraftTasks', JSON.stringify(draftTasks)); // SALVA NO LOCAL STORAGE
                     renderDrafts();
                 };
                 draftList.appendChild(li);
@@ -1203,6 +1218,7 @@
             const text = taskInput.value.trim();
             if (text) {
                 draftTasks.push(text);
+                localStorage.setItem('savedDraftTasks', JSON.stringify(draftTasks)); // SALVA NO LOCAL STORAGE
                 taskInput.value = '';
                 renderDrafts();
                 taskInput.focus();
@@ -1249,6 +1265,7 @@
             push(ref(db, 'logs'), reportData).then(() => {
                 giveXP(xpCalculated, draftTasks.length); // Passa qtd tarefas para estatisticas
                 draftTasks = [];
+                localStorage.removeItem('savedDraftTasks'); // LIMPA O STORAGE APÓS ENVIAR
                 renderDrafts();
             });
         }
@@ -1676,6 +1693,7 @@
                 });
                 // Atualiza variáveis locais
                 currentGold = gold;
+                currentUserLevel = currentLevel;
                 updateUIStats(currentXP, currentLevel, questsCompleted);
             });
         }
@@ -1696,6 +1714,7 @@
                     userInventory = data.inventory || {};
                     equippedItems = data.equipped || {};
                     currentGold = data.gold || 0;
+                    currentUserLevel = data.level || 1;
 
                     // Aplica borda visualmente no perfil
                     if(equippedItems.border) {
@@ -1716,11 +1735,12 @@
             // Define título (Equipado ou Padrão)
             let title = "";
             if(equippedItems && equippedItems.title) {
+                // Se o usuário EQUIPOU algo (mesmo que seja um título de nível antigo), usa isso
                 title = equippedItems.title;
             } else {
-                const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
-                const titleIndex = Math.min(level - 1, titles.length - 1);
-                title = titles[titleIndex];
+                // Se não equipou nada, usa o título do maior nível possível automaticamente
+                const titleIndex = Math.min(level - 1, LEVEL_TITLES_DATA.length - 1);
+                title = LEVEL_TITLES_DATA[titleIndex];
             }
             
             document.getElementById('userTitle').textContent = `${title} (Nvl. ${level})`;
