@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Quest - RPG Log</title>
+    <!-- Font Awesome para Icones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #121214;
+            --bg-panel: #202024;
+            --primary: #8257e6; /* Roxo Mágico */
+            --secondary: #04d361; /* Verde XP */
+            --danger: #ff5555; /* Vermelho Remover */
+            --text: #e1e1e6;
+            --text-secondary: #a8a8b3;
+            --border: #323238;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .btn-login {
+            background: var(--primary); color: white; padding: 15px 30px; 
+            border: none; border-radius: 5px; font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .btn-login:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+        /* APP PRINCIPAL - GRID DE 3 COLUNAS */
+        #app-container {
+            display: none; /* Escondido até logar */
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            height: 100vh;
+        }
+
+        /* COLUNA 1: PERFIL HEROI */
+        .col-profile {
+            background: var(--bg-panel); border-right: 1px solid var(--border);
+            padding: 20px; display: flex; flex-direction: column; align-items: center;
+        }
+        
+        /* AVATAR COM EDITAR */
+        .avatar-container { position: relative; width: 120px; height: 120px; margin-bottom: 15px; }
+        .avatar-frame {
+            width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--primary);
+            overflow: hidden; box-shadow: 0 0 15px var(--primary); position: relative;
+        }
+        .avatar-frame img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .avatar-edit-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; transition: 0.3s; cursor: pointer; color: white; font-size: 1.5rem;
+        }
+        .avatar-container:hover .avatar-edit-overlay { opacity: 1; }
+
+        .user-title { color: var(--secondary); font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .xp-bar-container { width: 100%; height: 15px; background: #000; border-radius: 10px; margin-top: 10px; overflow: hidden; border: 1px solid #444;}
+        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #04d361, #00ff88); width: 0%; transition: width 0.5s ease-in-out; }
+        
+        .stats { margin-top: 30px; width: 100%; text-align: left; font-size: 0.95rem; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;}
+        .stats p { margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .stats i { color: gold; width: 25px; }
+
+        /* COLUNA 2: CHAT FEED (O MUNDO) */
+        .col-feed {
+            background: var(--bg-dark); display: flex; flex-direction: column;
+            border-right: 1px solid var(--border);
+            background-image: radial-gradient(circle at center, #1a1a1e 0%, #121214 100%);
+            position: relative;
+        }
+        .feed-header { 
+            padding: 20px; border-bottom: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; 
+            display: flex; align-items: center; justify-content: space-between; background: var(--bg-panel);
+            position: relative; z-index: 20;
+        }
+        .feed-list { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+        
+        /* FERRAMENTAS DO HEADER (BUSCA E NOTIFICAÇÃO) */
+        .header-tools { display: flex; align-items: center; gap: 15px; }
+        
+        .tool-btn { cursor: pointer; position: relative; color: #ccc; transition: 0.2s; font-size: 1.2rem; }
+        .tool-btn:hover { color: white; }
+
+        /* BARRA DE PESQUISA (EXPANDÍVEL) */
+        .search-container {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #2a2a30; border-bottom: 1px solid var(--border);
+            padding: 10px 20px; display: none; align-items: center; gap: 10px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3); animation: slideDown 0.2s;
+        }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .search-input {
+            background: #121214; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 4px;
+            font-size: 0.9rem; outline: none; flex: 1;
+        }
+        .search-date {
+            background: #121214; border: 1px solid #444; color: white; padding: 7px 10px; border-radius: 4px;
+            font-size: 0.9rem; outline: none;
+        }
+        
+        /* NOTIFICAÇÕES */
+        .notification-badge {
+            position: absolute; top: -5px; right: -5px; background: var(--danger); color: white;
+            font-size: 0.7rem; width: 18px; height: 18px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-weight: bold;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .notification-dropdown {
+            position: absolute; top: 40px; right: 0; width: 300px;
+            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 100;
+            display: none; max-height: 400px; overflow-y: auto;
+        }
+        .notification-item {
+            padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; align-items: center;
+        }
+        .notification-item:hover { background: rgba(255,255,255,0.05); }
+        .notification-item i { color: var(--primary); }
+
+        /* CARD DE REPORT */
+        .quest-card {
+            background: var(--bg-panel); border-left: 5px solid var(--primary);
+            padding: 20px; margin-bottom: 20px; border-radius: 8px; animation: fadeIn 0.5s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative; 
+            transition: transform 0.2s;
+        }
+        .quest-card.auto-sent { border-left-color: #ffaa00; opacity: 0.9; }
+        
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; color: #888; align-items: center;}
+        
+        /* DESTAQUE DE DATA/HORA */
+        .timestamp-badge {
+            background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; border: 1px solid #333;
+            font-size: 0.8rem; display: flex; gap: 8px; align-items: center; color: #ccc;
+        }
+        .timestamp-badge i { color: var(--primary); }
+
+        .card-user { font-weight: bold; color: var(--text); display: flex; align-items: center; gap: 10px; font-size: 1rem;}
+        .card-user img { 
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--primary); 
+            cursor: help; /* Indica que tem hover */
+        }
+        
+        .task-list-display ul { list-style: none; }
+        .task-list-display li { margin-bottom: 8px; padding-left: 5px; border-bottom: 1px dashed #333; padding-bottom: 5px;}
+        .task-list-display i { color: var(--secondary); margin-right: 8px; }
+
+        /* BARRA DE AÇÕES (Social) */
+        .card-actions {
+            display: flex; gap: 15px; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.6; transition: opacity 0.3s;
+        }
+        .quest-card:hover .card-actions { opacity: 1; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--text-secondary); transition: 0.2s; }
+        .action-btn:hover { color: white; }
+        .action-btn.liked { color: #ff5555; }
+
+        /* COMENTÁRIOS */
+        .comments-section { display: none; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; }
+        .comment-list { margin-bottom: 10px; font-size: 0.85rem; max-height: 200px; overflow-y: auto; }
+        .comment-item { margin-bottom: 8px; display: flex; gap: 8px; }
+        .comment-item img { width: 20px; height: 20px; border-radius: 50%; }
+        .comment-content b { color: var(--primary); margin-right: 5px; }
+        
+        .comment-input-group { display: flex; gap: 5px; }
+        .comment-input-group input { 
+            background: #121214; border: 1px solid #333; color: white; padding: 5px 10px; border-radius: 3px; font-size: 0.9rem; flex: 1; 
+        }
+
+        /* --- MENU KEBAB (TRÊS PONTOS) --- */
+        .kebab-menu-container {
+            position: absolute; top: 15px; right: 15px;
+            cursor: pointer;
+        }
+        .kebab-icon {
+            color: #888; padding: 5px 10px; border-radius: 4px; transition: 0.2s;
+        }
+        .kebab-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        .kebab-dropdown {
+            display: none; position: absolute; right: 0; top: 30px;
+            background: #2a2a30; border: 1px solid #444; border-radius: 5px; width: 120px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .kebab-item {
+            padding: 10px; font-size: 0.9rem; color: #ccc; display: flex; align-items: center; gap: 8px;
+        }
+        .kebab-item:hover { background: var(--primary); color: white; }
+        
+        /* MODO EDIÇÃO */
+        .edit-textarea {
+            width: 100%; background: #121214; border: 1px solid var(--primary); color: white;
+            padding: 10px; border-radius: 4px; resize: vertical; min-height: 100px;
+            font-family: inherit; margin-bottom: 10px;
+        }
+        .edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-save-edit { background: var(--secondary); color: black; border:none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-weight: bold;}
+        .btn-cancel-edit { background: #444; color: white; border:none; padding: 5px 10px; border-radius: 3px; cursor: pointer;}
+
+        /* COLUNA 3: QUEST LOG (PAINEL DE TRABALHO) */
+        .col-quest-log {
+            background: var(--bg-panel); padding: 25px; display: flex; flex-direction: column;
+        }
+        .section-title { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 5px;}
+        
+        /* Input de Tarefas */
+        .input-group { display: flex; gap: 5px; margin-bottom: 20px; }
+        input[type="text"] {
+            flex: 1; background: #121214; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 4px; outline: none; transition: 0.2s;
+        }
+        input[type="text"]:focus { border-color: var(--primary); }
+        .btn-add { background: var(--secondary); color: #000; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.2rem;}
+        .btn-add:hover { background: #00ff88; }
+
+        /* Lista de Rascunho */
+        #draft-list { list-style: none; flex: 1; overflow-y: auto; margin-bottom: 20px;}
+        #draft-list li {
+            background: rgba(255,255,255,0.03); padding: 12px; margin-bottom: 8px;
+            display: flex; align-items: center; border-radius: 4px; border: 1px solid transparent;
+        }
+        #draft-list li:hover { border-color: #444; }
+        #draft-list li span { flex: 1; margin-left: 10px; font-size: 0.9rem;}
+        
+        /* Configurações e Ações */
+        .quest-actions { margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9rem; background: #1a1a1d; padding: 10px; border-radius: 5px;}
+        
+        .btn-submit {
+            width: 100%; background: var(--primary); color: white; padding: 15px;
+            border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 0 #5c3ea8; transition: 0.1s;
+        }
+        .btn-submit:active { transform: translateY(4px); box-shadow: none; }
+
+        /* TOOLTIP DE RIVALIDADE */
+        #userTooltip {
+            position: absolute; display: none; z-index: 1000;
+            background: #2a2a30; border: 1px solid var(--primary); border-radius: 8px;
+            padding: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            width: 200px; pointer-events: none; /* Não atrapalha o mouse */
+            text-align: center;
+        }
+        
+        /* ESTILO DO AVATAR NO TOOLTIP */
+        .tooltip-avatar {
+            width: 80px; height: 80px; margin: 0 auto 10px auto;
+            border-radius: 50%; border: 3px solid var(--primary);
+            overflow: hidden; box-shadow: 0 0 10px rgba(130, 87, 230, 0.5);
+        }
+        .tooltip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        #tooltipName { color: var(--primary); font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        #tooltipTitle { color: #888; font-size: 0.8rem; margin-bottom: 10px; }
+        .tooltip-stat { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; border-bottom: 1px dashed #444; padding-bottom: 3px; }
+        .tooltip-stat span:last-child { color: white; font-weight: bold; }
+
+        /* Scrollbar Personalizada */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Tag de Privado/Auto */
+        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold; text-transform: uppercase;}
+        .tag-auto { background: #ffaa00; color: black; }
+        .tag-private { background: #333; color: #fff; border: 1px solid #555; }
+    </style>
+</head>
+<body>
+
+    <!-- TOOLTIP DE RIVALIDADE (Escondido) -->
+    <div id="userTooltip">
+        <!-- Avatar Ampliado -->
+        <div class="tooltip-avatar">
+            <img id="tooltipAvatar" src="" alt="Avatar do Rival">
+        </div>
+        
+        <div id="tooltipName">Nome do Usuário</div>
+        <div id="tooltipTitle">Nível X</div>
+        <div class="tooltip-stat"><span>Nível:</span> <span id="ttLevel">1</span></div>
+        <div class="tooltip-stat"><span>XP Total:</span> <span id="ttXp">0</span></div>
+        <div class="tooltip-stat"><span>Missões:</span> <span id="ttQuests">0</span></div>
+    </div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen">
+        <h1 style="margin-bottom: 10px; color: var(--primary); font-size: 3rem;"><i class="fa-solid fa-dragon"></i></h1>
+        <h1 style="margin-bottom: 30px; font-size: 2rem;">Daily Quest RPG</h1>
+        <button class="btn-login" id="btnLogin"><i class="fa-brands fa-google"></i> Entrar com Google</button>
+        <p style="margin-top: 20px; color: #666; font-size: 0.8rem;">Acesso à Guilda Corporativa</p>
+    </div>
+
+    <!-- APLICAÇÃO -->
+    <div id="app-container"> <!-- Começa escondido -->
+        
+        <!-- ESQUERDA: PERFIL -->
+        <div class="col-profile">
+            <div class="avatar-container">
+                <div class="avatar-frame">
+                    <img id="userAvatar" src="" alt="Avatar">
+                </div>
+                <div class="avatar-edit-overlay" id="btnEditAvatar" title="Mudar Avatar (URL/GIF)">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+            </div>
+            
+            <h2 id="userName" style="text-align: center;">Guerreiro</h2>
+            <div class="user-title" id="userTitle">Nível 1</div>
+            
+            <div class="xp-bar-container">
+                <div class="xp-bar-fill" id="xpBar" style="width: 0%"></div>
+            </div>
+            <div style="font-size: 0.8rem; margin-top: 5px; color: #888;">XP: <span id="xpText" style="color: white;">0/100</span></div>
+
+            <div class="stats">
+                <p><i class="fa-solid fa-scroll"></i> Quests Feitas: <span id="questCount" style="color: white;">0</span></p>
+                <p><i class="fa-solid fa-trophy"></i> XP Total: <span id="totalXp" style="color: white;">0</span></p>
+            </div>
+        </div>
+
+        <!-- CENTRO: FEED -->
+        <div class="col-feed">
+            <div class="feed-header">
+                <div><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Chat da Guilda</div>
+                
+                <div class="header-tools">
+                    <!-- BOTÃO PESQUISA -->
+                    <div class="tool-btn" id="toggleSearchBtn" title="Pesquisar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+
+                    <!-- SINO DE NOTIFICAÇÃO -->
+                    <div class="tool-btn notification-container" id="notificationBtn" title="Notificações">
+                        <i class="fa-solid fa-bell"></i>
+                        <div class="notification-badge" id="notificationBadge">0</div>
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div style="padding:10px; font-weight:bold; border-bottom:1px solid #333; color: white;">Notificações</div>
+                            <div id="notificationList">
+                                <div style="padding:10px; color:#666; font-size:0.8rem">Nenhuma notificação recente.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAINEL DE PESQUISA (Escondido) -->
+                <div class="search-container" id="searchContainer">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nome ou tarefa...">
+                    <input type="date" id="searchDate" class="search-date">
+                    <div class="tool-btn" id="clearSearchBtn" title="Limpar Filtros" style="color: #ff5555;">
+                        <i class="fa-solid fa-times"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feed-list" id="feedList">
+                <!-- Os cards vão entrar aqui via JS -->
+                <div style="text-align: center; color: #444; margin-top: 50px;" id="emptyFeedMsg">
+                    <i class="fa-solid fa-ghost" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+                    Nenhum reporte enviado hoje...
+                </div>
+            </div>
+        </div>
+
+        <!-- DIREITA: QUEST LOG -->
+        <div class="col-quest-log">
+            <div class="section-title"><i class="fa-solid fa-feather"></i> Registrar Missão</div>
+            <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Adicione o que você fez durante o dia:</p>
+            
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="Ex: Finalizei o relatório...">
+                <button class="btn-add" id="btnAddTask"><i class="fa-solid fa-plus"></i></button>
+            </div>
+
+            <ul id="draft-list">
+                <!-- Lista temporária aqui -->
+            </ul>
+
+            <div class="quest-actions">
+                <div class="section-title" style="font-size: 1rem; border:none; margin-bottom: 10px;"><i class="fa-solid fa-sliders"></i> Configurações</div>
+                
+                <div class="config-row">
+                    <span><i class="fa-regular fa-clock"></i> Fim do Turno:</span>
+                    <input type="time" id="shiftEnd" value="18:00" style="background: #333; border:1px solid #555; color: white; padding: 5px; border-radius: 3px;">
+                </div>
+                <div class="config-row">
+                    <span><i class="fa-solid fa-user-secret"></i> Modo Fantasma:</span>
+                    <input type="checkbox" id="privateMode" style="width: 18px; height: 18px;">
+                </div>
+
+                <button class="btn-submit" id="btnSendReport">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar Daily
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS (FIREBASE E LÓGICA) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, onChildAdded, onChildRemoved, onChildChanged, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // ==========================================================
+        // SUAS CHAVES DO FIREBASE AQUI
+        // ==========================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOX9F98z780iU37DaaRtG0-htJf0ke0hs",
+            authDomain: "daily-quest-51660.firebaseapp.com",
+            projectId: "daily-quest-51660",
+            storageBucket: "daily-quest-51660.firebasestorage.app",
+            messagingSenderId: "43832156698",
+            appId: "1:43832156698:web:487715036d2827046e67a3",
+            measurementId: "G-VXXBYW186J",
+            databaseURL: "https://daily-quest-51660-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        // Variáveis de Estado Local
+        let currentUser = null;
+        let customAvatar = null; // Armazena avatar customizado
+        let draftTasks = [];
+        let autoSendInterval = null;
+        let unreadNotifications = 0;
+        let allFeedData = []; 
+
+        // Elementos DOM
+        const loginScreen = document.getElementById('login-screen');
+        const appContainer = document.getElementById('app-container');
+        const btnLogin = document.getElementById('btnLogin');
+        const taskInput = document.getElementById('taskInput');
+        const btnAddTask = document.getElementById('btnAddTask');
+        const draftList = document.getElementById('draft-list');
+        const btnSendReport = document.getElementById('btnSendReport');
+        const feedList = document.getElementById('feedList');
+        const shiftEndInput = document.getElementById('shiftEnd');
+        const btnEditAvatar = document.getElementById('btnEditAvatar');
+
+        // Notificações & Pesquisa
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const notificationList = document.getElementById('notificationList');
+        
+        const toggleSearchBtn = document.getElementById('toggleSearchBtn');
+        const searchContainer = document.getElementById('searchContainer');
+        const searchInput = document.getElementById('searchInput');
+        const searchDate = document.getElementById('searchDate');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+        // Tooltip Elements
+        const userTooltip = document.getElementById('userTooltip');
+
+        // Toggle Pesquisa
+        toggleSearchBtn.addEventListener('click', () => {
+            const isVisible = searchContainer.style.display === 'flex';
+            searchContainer.style.display = isVisible ? 'none' : 'flex';
+            if(!isVisible) searchInput.focus();
+        });
+
+        // Toggle Notificações
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            const isVisible = notificationDropdown.style.display === 'block';
+            notificationDropdown.style.display = isVisible ? 'none' : 'block';
+            if(!isVisible) {
+                unreadNotifications = 0;
+                notificationBadge.style.opacity = '0';
+            }
+        });
+        
+        // Mudar Avatar
+        btnEditAvatar.addEventListener('click', () => {
+            const url = prompt("Cole o link da sua imagem ou GIF (URL):", "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx.../giphy.gif");
+            if(url && url.startsWith('http')) {
+                update(ref(db, 'users/' + currentUser.uid), { avatar: url });
+                document.getElementById('userAvatar').src = url;
+                customAvatar = url;
+                alert("Avatar atualizado! Ele aparecerá nos próximos envios.");
+            }
+        });
+        
+        // Fecha dropdowns ao clicar fora
+        window.onclick = (e) => {
+            if (!notificationBtn.contains(e.target)) {
+                notificationDropdown.style.display = 'none';
+            }
+        };
+
+        // ==========================================================
+        // SISTEMA DE LOGIN
+        // ==========================================================
+        btnLogin.addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch((error) => alert("Erro ao logar: " + error.message));
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                loginScreen.style.display = 'none';
+                appContainer.style.display = 'grid'; 
+                
+                document.getElementById('userName').textContent = user.displayName.split(' ')[0]; 
+                
+                // Carrega status e Avatar customizado
+                loadUserStats();
+                startAutoSendMonitor();
+                listenForNotifications(); 
+            }
+        });
+
+        // ==========================================================
+        // LOGICA DE PESQUISA
+        // ==========================================================
+        function filterFeed() {
+            const term = searchInput.value.toLowerCase();
+            const dateVal = searchDate.value; // YYYY-MM-DD
+
+            // Filtra o array de cache
+            const filtered = allFeedData.filter(item => {
+                const data = item.val;
+                
+                // Filtro de Data
+                let dateMatch = true;
+                if(dateVal) {
+                    const itemDate = new Date(data.timestamp);
+                    const itemDateStr = itemDate.toLocaleDateString('en-CA'); 
+                    if(itemDateStr !== dateVal) dateMatch = false;
+                }
+
+                // Filtro de Texto
+                let textMatch = true;
+                if(term) {
+                    const nameMatch = data.name.toLowerCase().includes(term);
+                    const taskMatch = data.tasks && data.tasks.some(t => t.toLowerCase().includes(term));
+                    if(!nameMatch && !taskMatch) textMatch = false;
+                }
+
+                return dateMatch && textMatch;
+            });
+
+            // Re-renderiza
+            feedList.innerHTML = '';
+            if(filtered.length === 0) {
+                 feedList.innerHTML = '<div style="text-align:center; color:#666; margin-top:30px;">Nenhum resultado encontrado.</div>';
+            } else {
+                filtered.forEach(item => {
+                    renderCardToDOM(item.val, item.key);
+                });
+            }
+        }
+
+        searchInput.addEventListener('input', filterFeed);
+        searchDate.addEventListener('change', filterFeed);
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchDate.value = '';
+            filterFeed(); 
+        });
+
+        // ==========================================================
+        // TAREFAS (RASCUNHO)
+        // ==========================================================
+        function renderDrafts() {
+            draftList.innerHTML = '';
+            if(draftTasks.length === 0) {
+                draftList.innerHTML = '<li style="background:none; color:#555; justify-content:center;">Lista vazia...</li>';
+                return;
+            }
+
+            draftTasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <i class="fa-regular fa-square-check" style="color: var(--secondary)"></i>
+                    <span>${task}</span>
+                    <i class="fa-solid fa-xmark" style="cursor:pointer; color: #ff5555; padding: 5px;" class="delete-btn"></i>
+                `;
+                li.querySelector('.fa-xmark').onclick = () => {
+                    draftTasks.splice(index, 1);
+                    renderDrafts();
+                };
+                draftList.appendChild(li);
+            });
+        }
+
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+        btnAddTask.addEventListener('click', addTask);
+
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (text) {
+                draftTasks.push(text);
+                taskInput.value = '';
+                renderDrafts();
+                taskInput.focus();
+            }
+        }
+
+        // ==========================================================
+        // ENVIO DO REPORT
+        // ==========================================================
+        btnSendReport.addEventListener('click', () => sendReport(false));
+
+        function sendReport(isAuto) {
+            if (draftTasks.length === 0) {
+                if(!isAuto) alert("Sua lista de missões está vazia!");
+                return;
+            }
+
+            const isPrivate = document.getElementById('privateMode').checked;
+            const xpCalculated = draftTasks.length * 15 + (isAuto ? 0 : 30);
+            
+            // Usa avatar customizado ou o do Google
+            const finalAvatar = customAvatar || currentUser.photoURL;
+
+            const reportData = {
+                uid: currentUser.uid,
+                name: currentUser.displayName,
+                avatar: finalAvatar,
+                tasks: draftTasks,
+                timestamp: Date.now(),
+                isAuto: isAuto,
+                isPrivate: isPrivate,
+                xp: xpCalculated,
+                likes: {},     
+                comments: []   
+            };
+
+            push(ref(db, 'logs'), reportData).then(() => {
+                giveXP(xpCalculated, draftTasks.length); // Passa qtd tarefas para estatisticas
+                draftTasks = [];
+                renderDrafts();
+            });
+        }
+
+        // ==========================================================
+        // FUNÇÕES GLOBAIS (Janela)
+        // ==========================================================
+        
+        window.toggleKebab = function(event, key) {
+            event.stopPropagation();
+            document.querySelectorAll('.kebab-dropdown').forEach(el => el.style.display = 'none');
+            const menu = document.getElementById(`menu-${key}`);
+            if(menu) menu.style.display = 'block';
+        }
+
+        window.deleteLog = function(key, xpToRemove, uid) {
+            if(currentUser.uid !== uid) return;
+            if(confirm(`Tem certeza? Você perderá ${xpToRemove} XP.`)) {
+                remove(ref(db, 'logs/' + key));
+                // Penalidade tmb remove contagem de quests? Por simplicidade, só XP.
+                giveXP(-xpToRemove, 0); 
+            }
+        }
+
+        window.enableEditMode = function(key) {
+            const displayDiv = document.getElementById(`tasks-display-${key}`);
+            const listItems = displayDiv.querySelectorAll('li');
+            let textContent = [];
+            listItems.forEach(li => textContent.push(li.innerText.trim()));
+            displayDiv.dataset.originalCount = textContent.length;
+
+            const textAreaHtml = `
+                <textarea class="edit-textarea" id="edit-area-${key}">${textContent.join('\n')}</textarea>
+                <div class="edit-actions">
+                    <button class="btn-cancel-edit" onclick="window.cancelEdit('${key}')">Cancelar</button>
+                    <button class="btn-save-edit" onclick="window.saveEdit('${key}')">Salvar Ajustes</button>
+                </div>
+            `;
+            displayDiv.innerHTML = textAreaHtml;
+            document.querySelector(`#card-${key} .card-actions`).style.display = 'none';
+        }
+
+        window.cancelEdit = function(key) {
+            const item = allFeedData.find(i => i.key === key);
+            if(item) renderCardToDOM(item.val, key, true);
+        }
+
+        window.saveEdit = function(key) {
+            const textArea = document.getElementById(`edit-area-${key}`);
+            const newText = textArea.value.trim();
+            const newTasks = newText.split('\n').filter(t => t.trim() !== '');
+            
+            const displayDiv = document.getElementById(`tasks-display-${key}`);
+            const originalCount = parseInt(displayDiv.dataset.originalCount || 0);
+            const newCount = newTasks.length;
+            
+            const diffCount = newCount - originalCount;
+            const xpDiff = diffCount * 15;
+
+            get(ref(db, `logs/${key}`)).then(snapshot => {
+                const data = snapshot.val();
+                const currentTotalXp = data.xp || 0;
+                const newTotalXp = currentTotalXp + xpDiff;
+
+                update(ref(db, `logs/${key}`), {
+                    tasks: newTasks,
+                    xp: newTotalXp
+                }).then(() => {
+                    if(xpDiff !== 0) {
+                        giveXP(xpDiff, diffCount); // Atualiza também contagem de quests
+                        const msg = xpDiff > 0 ? `Adicionou tarefas: +${xpDiff} XP` : `Removeu tarefas: ${xpDiff} XP`;
+                        alert(`Daily atualizada! ${msg}`);
+                    }
+                });
+            });
+        }
+
+        window.toggleComments = function(key) {
+            const section = document.getElementById(`comments-${key}`);
+            if(section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        window.likeLog = function(key, ownerUid) {
+            const likesRef = ref(db, `logs/${key}/likes/${currentUser.uid}`);
+            get(likesRef).then((snapshot) => {
+                if(snapshot.exists()) {
+                    remove(likesRef); 
+                } else {
+                    update(ref(db, `logs/${key}/likes`), { [currentUser.uid]: true }); 
+                    if(ownerUid !== currentUser.uid) sendNotification(ownerUid, 'liked');
+                }
+            });
+        }
+
+        window.submitComment = function(key, ownerUid) {
+            const input = document.getElementById(`input-comment-${key}`);
+            const text = input.value.trim();
+            if(!text) return;
+
+            const commentData = {
+                uid: currentUser.uid,
+                name: currentUser.displayName,
+                avatar: customAvatar || currentUser.photoURL,
+                text: text,
+                timestamp: Date.now()
+            };
+            push(ref(db, `logs/${key}/comments`), commentData);
+            input.value = '';
+            if(ownerUid !== currentUser.uid) sendNotification(ownerUid, 'commented');
+        }
+
+        // TOOLTIP DE RIVALIDADE (HOVER)
+        window.showTooltip = function(event, uid, cardAvatarUrl) {
+            // Usa o avatar do card como fallback imediato
+            const avatarEl = document.getElementById('tooltipAvatar');
+            if(cardAvatarUrl) avatarEl.src = cardAvatarUrl;
+
+            // Busca dados atualizados do usuário alvo
+            get(ref(db, 'users/' + uid)).then((snapshot) => {
+                if(snapshot.exists()) {
+                    const data = snapshot.val();
+                    const level = data.level || 1;
+                    const xp = data.xp || 0;
+                    const quests = data.questsCompleted || 0;
+                    
+                    // Se o usuário tiver um avatar salvo no perfil, usa ele (pode ser mais novo que o do card)
+                    if(data.avatar) avatarEl.src = data.avatar;
+
+                    // Titulos (Mesma lógica do updateUIStats)
+                    const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
+                    const titleIndex = Math.min(level - 1, titles.length - 1);
+                    const title = titles[titleIndex];
+
+                    document.getElementById('tooltipName').textContent = data.displayName || "Usuário";
+                    document.getElementById('tooltipTitle').textContent = title;
+                    document.getElementById('ttLevel').textContent = level;
+                    document.getElementById('ttXp').textContent = xp + (level > 1 ? (level-1)*150 : 0);
+                    document.getElementById('ttQuests').textContent = quests;
+
+                    // Posiciona
+                    const tooltip = document.getElementById('userTooltip');
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (event.pageX + 10) + 'px';
+                    tooltip.style.top = (event.pageY + 10) + 'px';
+                }
+            });
+        }
+        
+        window.hideTooltip = function() {
+            document.getElementById('userTooltip').style.display = 'none';
+        }
+
+        // ==========================================================
+        // NOTIFICAÇÕES (Lógica)
+        // ==========================================================
+        function sendNotification(targetUid, type) {
+            const noteData = {
+                fromName: currentUser.displayName,
+                type: type, 
+                timestamp: Date.now()
+            };
+            push(ref(db, `notifications/${targetUid}`), noteData);
+        }
+
+        function listenForNotifications() {
+            const noteRef = ref(db, `notifications/${currentUser.uid}`);
+            onChildAdded(noteRef, (snapshot) => {
+                const data = snapshot.val();
+                if(Date.now() - data.timestamp > 3600000) return;
+
+                unreadNotifications++;
+                notificationBadge.innerText = unreadNotifications;
+                notificationBadge.style.opacity = '1';
+
+                const div = document.createElement('div');
+                div.className = 'notification-item';
+                const icon = data.type === 'liked' ? '<i class="fa-solid fa-heart" style="color:#ff5555"></i>' : '<i class="fa-solid fa-comment" style="color:#8257e6"></i>';
+                const action = data.type === 'liked' ? 'curtiu seu report.' : 'comentou no seu report.';
+                
+                div.innerHTML = `${icon} <span><b>${data.name || data.fromName}</b> ${action}</span>`;
+                notificationList.prepend(div);
+            });
+        }
+
+        // ==========================================================
+        // FEED REALTIME (Renderização Otimizada)
+        // ==========================================================
+        const logsRef = ref(db, 'logs');
+        
+        onChildAdded(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            const key = snapshot.key;
+            allFeedData.push({ key: key, val: data });
+            if(searchInput.value || searchDate.value) { filterFeed(); } else { renderCardToDOM(data, key); }
+        });
+
+        onChildChanged(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            const key = snapshot.key;
+            const index = allFeedData.findIndex(i => i.key === key);
+            if(index !== -1) allFeedData[index].val = data;
+            renderCardToDOM(data, key, true);
+        });
+
+        onChildRemoved(logsRef, (snapshot) => {
+            const key = snapshot.key;
+            allFeedData = allFeedData.filter(i => i.key !== key);
+            const card = document.getElementById(`card-${key}`);
+            if(card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 300); }
+        });
+
+        function renderCardToDOM(data, key, replace = false) {
+            if (data.isPrivate && data.uid !== currentUser.uid) return;
+
+            const emptyMsg = document.getElementById('emptyFeedMsg');
+            if(emptyMsg) emptyMsg.style.display = 'none';
+
+            const dateObj = new Date(data.timestamp);
+            const dateStr = dateObj.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+            const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const autoTag = data.isAuto ? '<span class="tag tag-auto">AUTO</span>' : '';
+            const privateTag = data.isPrivate ? '<span class="tag tag-private"><i class="fa-solid fa-lock"></i> PRIVADO</span>' : '';
+
+            // MENU KEBAB
+            let menuHtml = '';
+            if (currentUser && data.uid === currentUser.uid) {
+                const xpValue = data.xp || 0; 
+                menuHtml = `
+                <div class="kebab-menu-container" onclick="window.toggleKebab(event, '${key}')">
+                    <i class="fa-solid fa-ellipsis-v kebab-icon"></i>
+                    <div class="kebab-dropdown" id="menu-${key}">
+                        <div class="kebab-item" onclick="window.enableEditMode('${key}')">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </div>
+                        <div class="kebab-item" onclick="window.deleteLog('${key}', ${xpValue}, '${data.uid}')" style="color:#ff5555">
+                            <i class="fa-solid fa-trash"></i> Excluir
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            const likeCount = data.likes ? Object.keys(data.likes).length : 0;
+            const userLiked = data.likes && data.likes[currentUser.uid] ? 'liked' : '';
+            
+            let commentsHtml = '';
+            if(data.comments) {
+                Object.values(data.comments).forEach(c => {
+                    commentsHtml += `
+                        <div class="comment-item">
+                            <img src="${c.avatar}">
+                            <div class="comment-content"><b>${c.name.split(' ')[0]}:</b> ${c.text}</div>
+                        </div>`;
+                });
+            }
+
+            // Tasks
+            let tasksHtml = '';
+            if(data.tasks) {
+                data.tasks.forEach(task => {
+                    tasksHtml += `<li><i class="fa-solid fa-check"></i> ${task}</li>`;
+                });
+            }
+
+            const cardContent = `
+                ${menuHtml}
+                <div class="card-header">
+                    <div class="card-user" onmouseenter="window.showTooltip(event, '${data.uid}', '${data.avatar}')" onmouseleave="window.hideTooltip()">
+                        <img src="${data.avatar}"> ${data.name.split(' ')[0]} ${autoTag} ${privateTag}
+                    </div>
+                    <!-- DATA E HORA DESTACADOS -->
+                    <div class="timestamp-badge">
+                        <i class="fa-regular fa-calendar"></i> ${dateStr} 
+                        <span style="opacity:0.5">|</span> 
+                        <i class="fa-regular fa-clock"></i> ${timeStr}
+                    </div>
+                </div>
+                
+                <div class="task-list-display" id="tasks-display-${key}">
+                    <ul>${tasksHtml}</ul>
+                </div>
+                
+                <div class="card-actions">
+                    <div class="action-btn ${userLiked}" onclick="window.likeLog('${key}', '${data.uid}')">
+                        <i class="fa-solid fa-heart"></i> ${likeCount || 'Curtir'}
+                    </div>
+                    <div class="action-btn" onclick="window.toggleComments('${key}')">
+                        <i class="fa-solid fa-comment"></i> Comentar
+                    </div>
+                    <div style="flex:1; text-align:right; font-size:0.7rem; color:#555; align-self:center;">+${data.xp || 0} XP</div>
+                </div>
+
+                <div class="comments-section" id="comments-${key}">
+                    <div class="comment-list">${commentsHtml || '<div style="color:#666; font-style:italic;">Seja o primeiro a comentar...</div>'}</div>
+                    <div class="comment-input-group">
+                        <input type="text" id="input-comment-${key}" placeholder="Escreva algo..." onkeypress="if(event.key === 'Enter') window.submitComment('${key}', '${data.uid}')">
+                        <button onclick="window.submitComment('${key}', '${data.uid}')" style="background:var(--primary); color:white; border:none; padding:0 10px; border-radius:3px; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            `;
+
+            if(replace) {
+                const existingCard = document.getElementById(`card-${key}`);
+                if(existingCard) {
+                    existingCard.innerHTML = cardContent;
+                    existingCard.className = `quest-card ${data.isAuto ? 'auto-sent' : ''}`;
+                    return;
+                }
+            }
+
+            const card = document.createElement('div');
+            card.id = `card-${key}`;
+            card.className = `quest-card ${data.isAuto ? 'auto-sent' : ''}`;
+            card.innerHTML = cardContent;
+            
+            // Adiciona no fim
+            feedList.appendChild(card);
+            feedList.scrollTop = feedList.scrollHeight;
+        }
+
+        // ==========================================================
+        // XP & STATUS
+        // ==========================================================
+        function giveXP(xpAmount, questsAmount) {
+            const userRef = ref(db, 'users/' + currentUser.uid);
+            get(userRef).then((snapshot) => {
+                let currentXP = 0; let currentLevel = 1; let questsCompleted = 0;
+                let displayName = currentUser.displayName; // Garante que o nome esteja salvo tmb
+
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    currentXP = data.xp || 0; 
+                    currentLevel = data.level || 1;
+                    questsCompleted = data.questsCompleted || 0;
+                }
+
+                currentXP += xpAmount;
+                questsCompleted += questsAmount;
+                
+                const xpToNextLevel = currentLevel * 150;
+                
+                if (currentXP >= xpToNextLevel) {
+                    currentLevel++;
+                    currentXP = currentXP - xpToNextLevel;
+                    alert(`LEVEL UP! NÍVEL ${currentLevel}!`);
+                }
+                if (currentXP < 0) {
+                    if (currentLevel > 1) {
+                        currentLevel--;
+                        currentXP = (currentLevel * 150) + currentXP;
+                        alert(`Caiu para o Nível ${currentLevel}.`);
+                    } else currentXP = 0;
+                }
+
+                // Salva tudo, incluindo nome e avatar atualizado
+                update(userRef, { 
+                    xp: currentXP, 
+                    level: currentLevel, 
+                    questsCompleted: questsCompleted,
+                    displayName: displayName, 
+                    lastUpdate: Date.now() 
+                });
+                updateUIStats(currentXP, currentLevel, questsCompleted);
+            });
+        }
+
+        function loadUserStats() {
+            const userRef = ref(db, 'users/' + currentUser.uid);
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if(data.avatar) {
+                        document.getElementById('userAvatar').src = data.avatar;
+                        customAvatar = data.avatar;
+                    } else {
+                         document.getElementById('userAvatar').src = currentUser.photoURL;
+                    }
+                    updateUIStats(data.xp || 0, data.level || 1, data.questsCompleted || 0);
+                } else {
+                    document.getElementById('userAvatar').src = currentUser.photoURL;
+                }
+            });
+        }
+
+        function updateUIStats(xp, level, quests) {
+            const maxXp = level * 150;
+            const percentage = Math.max(0, (xp / maxXp) * 100);
+            const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
+            const titleIndex = Math.min(level - 1, titles.length - 1);
+            
+            document.getElementById('userTitle').textContent = `${titles[titleIndex]} (Nvl. ${level})`;
+            document.getElementById('xpText').textContent = `${xp}/${maxXp}`;
+            document.getElementById('xpBar').style.width = `${percentage}%`;
+            
+            // Total XP (Nivel base + XP atual)
+            const totalXpCalc = xp + (level > 1 ? (level-1)*150 : 0);
+            document.getElementById('totalXp').textContent = totalXpCalc; 
+            document.getElementById('questCount').textContent = quests;
+        }
+
+        function startAutoSendMonitor() {
+            if (autoSendInterval) clearInterval(autoSendInterval);
+            autoSendInterval = setInterval(() => {
+                const now = new Date();
+                const currentTime = now.toTimeString().substring(0, 5);
+                if (currentTime === shiftEndInput.value && draftTasks.length > 0) {
+                    sendReport(true);
+                }
+            }, 60000);
+        }
+    </script>
+</body>
+</html>
