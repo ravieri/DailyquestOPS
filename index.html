@@ -3,25 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Quest - RPG Log</title>
-    <!-- Font Awesome para Icones -->
+    <title>Daily Quest - RPG Log & Shop</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* DEFINIÇÃO DE CORES (VARIÁVEIS) */
         :root {
+            /* TEMA PADRÃO (DARK) */
             --bg-dark: #121214;
             --bg-panel: #202024;
+            --bg-element: #1a1a1d; /* Elementos internos */
+            --bg-input: #121214;
+            --bg-dropdown: #2a2a30;
+            
             --primary: #8257e6; /* Roxo Mágico */
             --secondary: #04d361; /* Verde XP */
+            --gold: #ffd700; /* Dourado da Loja */
             --danger: #ff5555; /* Vermelho Remover */
+            
             --text: #e1e1e6;
             --text-secondary: #a8a8b3;
             --border: #323238;
+            
+            --hover-item: rgba(255,255,255,0.05);
+            --scrollbar-thumb: #444;
+            
+            --shadow: rgba(0,0,0,0.3);
+        }
+
+        /* TEMA CLARO (LIGHT) - Substitui as variáveis quando ativo */
+        [data-theme="light"] {
+            --bg-dark: #f0f2f5;
+            --bg-panel: #ffffff;
+            --bg-element: #f7f7f8;
+            --bg-input: #e1e1e6;
+            --bg-dropdown: #ffffff;
+            
+            /* Primary e Secondary mantidos ou ajustados */
+            --text: #29292e;
+            --text-secondary: #737380;
+            --border: #dcdce6;
+            
+            --hover-item: rgba(0,0,0,0.05);
+            --scrollbar-thumb: #ccc;
+            
+            --shadow: rgba(0,0,0,0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.3s, color 0.3s; }
 
         /* TELA DE LOGIN */
         #login-screen {
@@ -40,21 +71,42 @@
         #app-container {
             display: none; /* Escondido até logar */
             display: grid;
-            grid-template-columns: 280px 1fr 320px;
+            grid-template-columns: 280px 1fr 320px; /* Layout Desktop */
+            grid-template-rows: 100vh; /* FORÇA A ALTURA FIXA */
             height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* IMPEDE A TELA DE ESTICAR */
         }
 
         /* COLUNA 1: PERFIL HEROI */
         .col-profile {
             background: var(--bg-panel); border-right: 1px solid var(--border);
-            padding: 20px; display: flex; flex-direction: column; align-items: center;
+            padding: 30px 20px; /* Mais padding no topo */
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            justify-content: flex-start; /* GARANTE QUE TUDO FIQUE NO TOPO */
+            gap: 15px; /* Espaço consistente entre elementos */
+            height: 100%; 
+            overflow-y: auto;
+            transition: background-color 0.3s;
+        }
+        
+        /* Container extra para agrupar XP e Stats */
+        .profile-stats-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px; /* Espaço extra do nome */
         }
         
         /* AVATAR COM EDITAR */
-        .avatar-container { position: relative; width: 120px; height: 120px; margin-bottom: 15px; }
+        .avatar-container { position: relative; width: 120px; height: 120px; margin-bottom: 5px; flex-shrink: 0;}
         .avatar-frame {
             width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--primary);
-            overflow: hidden; box-shadow: 0 0 15px var(--primary); position: relative;
+            overflow: hidden; box-shadow: 0 0 15px rgba(130, 87, 230, 0.5); position: relative;
+            transition: border 0.3s, box-shadow 0.3s; /* Transição para bordas compradas */
         }
         .avatar-frame img { width: 100%; height: 100%; object-fit: cover; }
         
@@ -66,49 +118,126 @@
         }
         .avatar-container:hover .avatar-edit-overlay { opacity: 1; }
 
+        /* ========================================= */
+        /* ESTILOS DE BORDAS EFEITOS (FIXED)         */
+        /* ========================================= */
+        
+        /* Wrapper no chat para alinhar borda e imagem */
+        .chat-avatar-wrapper {
+            position: relative;
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1; /* Contexto de pilha */
+        }
+        
+        .chat-avatar-img {
+            width: 100%; height: 100%; 
+            border-radius: 50%; 
+            position: relative; 
+            z-index: 5; /* Imagem SEMPRE na frente */
+            object-fit: cover;
+            background: var(--bg-panel); /* Evita transparência */
+        }
+
+        /* Classe base para bordas no chat (Escondida por padrão) */
+        .border-overlay {
+            position: absolute;
+            top: -3px; left: -3px; 
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            z-index: 1; /* Atrás da imagem */
+            opacity: 0; /* Invisível */
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: none;
+        }
+
+        /* MOSTRAR NO HOVER */
+        .card-user:hover .border-overlay {
+            opacity: 1;
+        }
+
+        /* Estilos Específicos */
+        .border-default { border: 2px solid var(--primary); }
+        .border-gold { border: 3px solid #ffd700; box-shadow: 0 0 10px #ffd700; }
+        .border-fire { border: 3px solid #ff5555; box-shadow: 0 0 10px #ff5555; }
+        .border-ice { border: 3px solid #00ffff; box-shadow: 0 0 10px #00ffff; }
+        
+        /* Rainbow corrigido: Fica atrás da imagem com gradiente */
+        .border-rainbow { 
+            background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            box-shadow: 0 0 15px rgba(255,255,255,0.4);
+        }
+
+        /* Estilos do Perfil (Fixo, sem hover) */
+        .profile-border-rainbow {
+            border: 4px solid transparent; /* Espaço para o gradiente */
+            background: linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box,
+                        linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) border-box;
+        }
+        .profile-border-gold { border-color: #ffd700 !important; box-shadow: 0 0 20px #ffd700; }
+        .profile-border-fire { border-color: #ff5555 !important; box-shadow: 0 0 20px #ff5555; }
+        .profile-border-ice { border-color: #00ffff !important; box-shadow: 0 0 20px #00ffff; }
+
+
         .user-title { color: var(--secondary); font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
-        .xp-bar-container { width: 100%; height: 15px; background: #000; border-radius: 10px; margin-top: 10px; overflow: hidden; border: 1px solid #444;}
+        .xp-bar-container { width: 100%; height: 15px; background: #000; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid var(--border);}
         .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #04d361, #00ff88); width: 0%; transition: width 0.5s ease-in-out; }
         
-        .stats { margin-top: 30px; width: 100%; text-align: left; font-size: 0.95rem; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;}
-        .stats p { margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .stats { margin-top: 20px; width: 100%; text-align: left; font-size: 0.95rem; background: var(--bg-element); padding: 15px; border-radius: 8px;}
+        .stats p { margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
         .stats i { color: gold; width: 25px; }
 
         /* COLUNA 2: CHAT FEED (O MUNDO) */
         .col-feed {
-            background: var(--bg-dark); display: flex; flex-direction: column;
+            background: var(--bg-dark); 
+            display: flex; flex-direction: column;
             border-right: 1px solid var(--border);
-            background-image: radial-gradient(circle at center, #1a1a1e 0%, #121214 100%);
+            /* Gradiente sutil adaptado */
+            background-image: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.2) 100%);
             position: relative;
+            min-width: 0; 
+            height: 100%; 
+            overflow: hidden; 
+            transition: background-color 0.3s;
         }
         .feed-header { 
             padding: 20px; border-bottom: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; 
             display: flex; align-items: center; justify-content: space-between; background: var(--bg-panel);
             position: relative; z-index: 20;
+            flex-shrink: 0; 
         }
-        .feed-list { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+        /* SCROLL DO CHAT */
+        .feed-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            scroll-behavior: smooth; 
+            min-height: 0; 
+        }
         
-        /* FERRAMENTAS DO HEADER (BUSCA E NOTIFICAÇÃO) */
+        /* FERRAMENTAS DO HEADER (BUSCA, LOJA E NOTIFICAÇÃO) */
         .header-tools { display: flex; align-items: center; gap: 15px; }
         
-        .tool-btn { cursor: pointer; position: relative; color: #ccc; transition: 0.2s; font-size: 1.2rem; }
-        .tool-btn:hover { color: white; }
+        .tool-btn { cursor: pointer; position: relative; color: var(--text-secondary); transition: 0.2s; font-size: 1.2rem; }
+        .tool-btn:hover { color: var(--text); }
+        .tool-btn.gold-btn { color: var(--gold); }
+        .tool-btn.gold-btn:hover { text-shadow: 0 0 10px var(--gold); }
 
         /* BARRA DE PESQUISA (EXPANDÍVEL) */
         .search-container {
             position: absolute; top: 100%; left: 0; width: 100%;
-            background: #2a2a30; border-bottom: 1px solid var(--border);
+            background: var(--bg-dropdown); border-bottom: 1px solid var(--border);
             padding: 10px 20px; display: none; align-items: center; gap: 10px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.3); animation: slideDown 0.2s;
+            box-shadow: 0 5px 10px var(--shadow); animation: slideDown 0.2s;
         }
         @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .search-input {
-            background: #121214; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 4px;
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 4px;
             font-size: 0.9rem; outline: none; flex: 1;
         }
         .search-date {
-            background: #121214; border: 1px solid #444; color: white; padding: 7px 10px; border-radius: 4px;
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 4px;
             font-size: 0.9rem; outline: none;
         }
         
@@ -122,64 +251,84 @@
         .notification-dropdown {
             position: absolute; top: 40px; right: 0; width: 300px;
             background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 100;
+            box-shadow: 0 5px 15px var(--shadow); z-index: 100;
             display: none; max-height: 400px; overflow-y: auto;
         }
         .notification-item {
-            padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; align-items: center;
+            padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; display: flex; gap: 10px; align-items: center; color: var(--text);
         }
-        .notification-item:hover { background: rgba(255,255,255,0.05); }
+        .notification-item:hover { background: var(--hover-item); }
         .notification-item i { color: var(--primary); }
 
         /* CARD DE REPORT */
         .quest-card {
             background: var(--bg-panel); border-left: 5px solid var(--primary);
             padding: 20px; margin-bottom: 20px; border-radius: 8px; animation: fadeIn 0.5s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px var(--shadow);
             position: relative; 
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s;
         }
         .quest-card.auto-sent { border-left-color: #ffaa00; opacity: 0.9; }
         
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; color: #888; align-items: center;}
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary); align-items: center;}
         
         /* DESTAQUE DE DATA/HORA */
         .timestamp-badge {
-            background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; border: 1px solid #333;
-            font-size: 0.8rem; display: flex; gap: 8px; align-items: center; color: #ccc;
+            background: var(--bg-element); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+            font-size: 0.8rem; display: flex; gap: 8px; align-items: center; color: var(--text-secondary);
         }
         .timestamp-badge i { color: var(--primary); }
 
-        .card-user { font-weight: bold; color: var(--text); display: flex; align-items: center; gap: 10px; font-size: 1rem;}
-        .card-user img { 
-            width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--primary); 
-            cursor: help; /* Indica que tem hover */
-        }
+        .card-user { font-weight: bold; color: var(--text); display: flex; align-items: center; gap: 10px; font-size: 1rem; cursor: pointer;}
         
         .task-list-display ul { list-style: none; }
-        .task-list-display li { margin-bottom: 8px; padding-left: 5px; border-bottom: 1px dashed #333; padding-bottom: 5px;}
+        .task-list-display li { margin-bottom: 8px; padding-left: 5px; border-bottom: 1px dashed var(--border); padding-bottom: 5px; color: var(--text);}
         .task-list-display i { color: var(--secondary); margin-right: 8px; }
 
         /* BARRA DE AÇÕES (Social) */
         .card-actions {
-            display: flex; gap: 15px; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);
-            opacity: 0.6; transition: opacity 0.3s;
+            display: flex; gap: 15px; margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border);
+            opacity: 0.6; transition: opacity 0.3s; position: relative;
         }
         .quest-card:hover .card-actions { opacity: 1; }
+        
+        /* SISTEMA DE REAÇÕES (HOVER NO LIKE) */
+        .like-container { position: relative; }
+        .reaction-popup {
+            position: absolute; bottom: 100%; left: 0; 
+            background: var(--bg-dropdown); border: 1px solid var(--border); border-radius: 20px;
+            padding: 5px; display: none; gap: 5px; box-shadow: 0 5px 15px var(--shadow);
+            animation: fadeIn 0.2s; white-space: nowrap; z-index: 10;
+        }
+        .reaction-icon {
+            width: 30px; height: 30px; display: inline-flex; justify-content: center; align-items: center;
+            border-radius: 50%; cursor: pointer; transition: 0.2s; font-size: 1rem; color: var(--text-secondary);
+        }
+        .reaction-icon:hover { background: var(--bg-element); transform: scale(1.2); color: var(--primary); }
+        .like-container:hover .reaction-popup { display: flex; }
+
         .action-btn { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--text-secondary); transition: 0.2s; }
-        .action-btn:hover { color: white; }
-        .action-btn.liked { color: #ff5555; }
+        .action-btn:hover { color: var(--text); }
+        
+        /* Cores das Reações Ativas */
+        .action-btn.liked i.fa-heart { color: #ff5555; }
+        .action-btn.liked i.fa-fire { color: #ffaa00; }
+        .action-btn.liked i.fa-star { color: #ffd700; }
+        .action-btn.liked i.fa-thumbs-up { color: #04d361; }
+        .action-btn.liked i.fa-poo { color: #8d6e63; }
+        .action-btn.liked i.fa-ghost { color: #a8a8b3; }
+
 
         /* COMENTÁRIOS */
-        .comments-section { display: none; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; }
-        .comment-list { margin-bottom: 10px; font-size: 0.85rem; max-height: 200px; overflow-y: auto; }
+        .comments-section { display: none; margin-top: 15px; background: var(--bg-element); padding: 10px; border-radius: 5px; }
+        .comment-list { margin-bottom: 10px; font-size: 0.85rem; max-height: 200px; overflow-y: auto; color: var(--text); }
         .comment-item { margin-bottom: 8px; display: flex; gap: 8px; }
         .comment-item img { width: 20px; height: 20px; border-radius: 50%; }
         .comment-content b { color: var(--primary); margin-right: 5px; }
         
         .comment-input-group { display: flex; gap: 5px; }
         .comment-input-group input { 
-            background: #121214; border: 1px solid #333; color: white; padding: 5px 10px; border-radius: 3px; font-size: 0.9rem; flex: 1; 
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 3px; font-size: 0.9rem; flex: 1; 
         }
 
         /* --- MENU KEBAB (TRÊS PONTOS) --- */
@@ -188,23 +337,23 @@
             cursor: pointer;
         }
         .kebab-icon {
-            color: #888; padding: 5px 10px; border-radius: 4px; transition: 0.2s;
+            color: var(--text-secondary); padding: 5px 10px; border-radius: 4px; transition: 0.2s;
         }
-        .kebab-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+        .kebab-icon:hover { background: var(--hover-item); color: var(--text); }
         
         .kebab-dropdown {
             display: none; position: absolute; right: 0; top: 30px;
-            background: #2a2a30; border: 1px solid #444; border-radius: 5px; width: 120px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10;
+            background: var(--bg-dropdown); border: 1px solid var(--border); border-radius: 5px; width: 120px;
+            box-shadow: 0 5px 15px var(--shadow); z-index: 10;
         }
         .kebab-item {
-            padding: 10px; font-size: 0.9rem; color: #ccc; display: flex; align-items: center; gap: 8px;
+            padding: 10px; font-size: 0.9rem; color: var(--text); display: flex; align-items: center; gap: 8px;
         }
         .kebab-item:hover { background: var(--primary); color: white; }
         
         /* MODO EDIÇÃO */
         .edit-textarea {
-            width: 100%; background: #121214; border: 1px solid var(--primary); color: white;
+            width: 100%; background: var(--bg-input); border: 1px solid var(--primary); color: var(--text);
             padding: 10px; border-radius: 4px; resize: vertical; min-height: 100px;
             font-family: inherit; margin-bottom: 10px;
         }
@@ -214,31 +363,42 @@
 
         /* COLUNA 3: QUEST LOG (PAINEL DE TRABALHO) */
         .col-quest-log {
-            background: var(--bg-panel); padding: 25px; display: flex; flex-direction: column;
+            background: var(--bg-panel); 
+            padding: 25px; 
+            display: flex; flex-direction: column;
+            overflow: hidden; 
+            height: 100%; 
+            transition: background-color 0.3s;
         }
-        .section-title { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 5px;}
+        .section-title { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 5px; flex-shrink: 0;}
         
         /* Input de Tarefas */
-        .input-group { display: flex; gap: 5px; margin-bottom: 20px; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 20px; flex-shrink: 0; }
         input[type="text"] {
-            flex: 1; background: #121214; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 4px; outline: none; transition: 0.2s;
+            flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 4px; outline: none; transition: 0.2s;
         }
         input[type="text"]:focus { border-color: var(--primary); }
         .btn-add { background: var(--secondary); color: #000; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.2rem;}
         .btn-add:hover { background: #00ff88; }
 
-        /* Lista de Rascunho */
-        #draft-list { list-style: none; flex: 1; overflow-y: auto; margin-bottom: 20px;}
-        #draft-list li {
-            background: rgba(255,255,255,0.03); padding: 12px; margin-bottom: 8px;
-            display: flex; align-items: center; border-radius: 4px; border: 1px solid transparent;
+        /* SCROLL DO REGISTRO DE MISSÕES */
+        #draft-list { 
+            list-style: none; 
+            flex: 1; 
+            overflow-y: auto; 
+            margin-bottom: 20px;
+            min-height: 0; 
         }
-        #draft-list li:hover { border-color: #444; }
+        #draft-list li {
+            background: var(--bg-element); padding: 12px; margin-bottom: 8px;
+            display: flex; align-items: center; border-radius: 4px; border: 1px solid transparent; color: var(--text);
+        }
+        #draft-list li:hover { border-color: var(--border); }
         #draft-list li span { flex: 1; margin-left: 10px; font-size: 0.9rem;}
         
         /* Configurações e Ações */
-        .quest-actions { margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px; }
-        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9rem; background: #1a1a1d; padding: 10px; border-radius: 5px;}
+        .quest-actions { margin-top: auto; border-top: 1px solid var(--border); padding-top: 20px; flex-shrink: 0; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9rem; background: var(--bg-element); padding: 10px; border-radius: 5px; color: var(--text);}
         
         .btn-submit {
             width: 100%; background: var(--primary); color: white; padding: 15px;
@@ -252,8 +412,8 @@
         /* TOOLTIP DE RIVALIDADE */
         #userTooltip {
             position: absolute; display: none; z-index: 1000;
-            background: #2a2a30; border: 1px solid var(--primary); border-radius: 8px;
-            padding: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            background: var(--bg-dropdown); border: 1px solid var(--primary); border-radius: 8px;
+            padding: 15px; box-shadow: 0 10px 20px var(--shadow);
             width: 200px; pointer-events: none; /* Não atrapalha o mouse */
             text-align: center;
         }
@@ -267,14 +427,14 @@
         .tooltip-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
         #tooltipName { color: var(--primary); font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
-        #tooltipTitle { color: #888; font-size: 0.8rem; margin-bottom: 10px; }
-        .tooltip-stat { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; border-bottom: 1px dashed #444; padding-bottom: 3px; }
-        .tooltip-stat span:last-child { color: white; font-weight: bold; }
+        #tooltipTitle { color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 10px; }
+        .tooltip-stat { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; border-bottom: 1px dashed var(--border); padding-bottom: 3px; color: var(--text); }
+        .tooltip-stat span:last-child { color: var(--text); font-weight: bold; }
 
-        /* Scrollbar Personalizada */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        /* SCROLLBAR PERSONALIZADA (Mais Visível) */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); border-left: 1px solid var(--border); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; border: 1px solid var(--border); }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -283,13 +443,140 @@
         .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: bold; text-transform: uppercase;}
         .tag-auto { background: #ffaa00; color: black; }
         .tag-private { background: #333; color: #fff; border: 1px solid #555; }
+
+        /* --- LOJA MODAL --- */
+        .shop-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+        .shop-content {
+            background: var(--bg-panel); width: 600px; max-width: 90%; max-height: 80vh;
+            border-radius: 8px; border: 1px solid var(--gold);
+            display: flex; flex-direction: column;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+        .shop-header {
+            padding: 15px 20px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-dropdown); border-radius: 8px 8px 0 0;
+        }
+        .shop-title { color: var(--gold); font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .shop-close { cursor: pointer; font-size: 1.5rem; color: var(--text-secondary); transition: 0.2s; }
+        .shop-close:hover { color: var(--danger); }
+        
+        .shop-body { padding: 20px; overflow-y: auto; flex: 1; }
+        
+        .shop-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .shop-tab-btn {
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text);
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: 0.3s;
+        }
+        .shop-tab-btn.active, .shop-tab-btn:hover { background: var(--gold); color: black; border-color: var(--gold); font-weight: bold; }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .shop-item {
+            background: var(--bg-element); border: 1px solid var(--border); border-radius: 6px;
+            padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            text-align: center; transition: 0.2s; position: relative;
+        }
+        .shop-item:hover { transform: translateY(-3px); border-color: var(--gold); }
+        .shop-item.owned { border-color: var(--secondary); opacity: 0.8; }
+        .shop-item.locked { opacity: 0.5; cursor: not-allowed; border-color: transparent !important; }
+        .shop-item.locked:hover { transform: none; }
+        
+        .item-preview { height: 50px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--text); }
+        .item-name { font-weight: bold; font-size: 0.9rem; }
+        .item-price { color: var(--gold); font-size: 0.85rem; font-weight: bold; }
+        
+        .shop-section-label { 
+            grid-column: 1 / -1; margin-top: 15px; margin-bottom: 5px; 
+            font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border); padding-bottom: 5px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .btn-buy {
+            background: var(--gold); color: black; border: none; padding: 5px 15px; border-radius: 4px;
+            font-weight: bold; cursor: pointer; width: 100%; margin-top: auto;
+        }
+        .btn-buy:hover { filter: brightness(1.1); }
+        
+        .btn-equip {
+            background: var(--secondary); color: black; border: none; padding: 5px 15px; border-radius: 4px;
+            font-weight: bold; cursor: pointer; width: 100%; margin-top: auto;
+        }
+        .btn-locked {
+            background: #333; color: #777; border: 1px solid #444; padding: 5px 15px; border-radius: 4px;
+            font-weight: bold; cursor: not-allowed; width: 100%; margin-top: auto;
+        }
+        
+        .item-owned-tag { position: absolute; top: 5px; right: 5px; color: var(--secondary); font-size: 0.8rem; }
+
+
+        /* ========================================= */
+        /* RESPONSIVIDADE (MOBILE & TABLET)          */
+        /* ========================================= */
+        @media (max-width: 950px) {
+            #app-container {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            /* 1. PERFIL: Topo compacto */
+            .col-profile {
+                flex-direction: row;
+                height: auto;
+                padding: 10px 15px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                justify-content: space-between;
+                flex-shrink: 0; 
+                gap: 0;
+            }
+            .profile-stats-group {
+                width: 50%;
+                margin-top: 0;
+            }
+            .avatar-container { width: 50px; height: 50px; margin: 0; margin-right: 15px; }
+            .col-profile h2 { font-size: 1rem; text-align: left; }
+            .user-title { font-size: 0.75rem; margin-bottom: 0; }
+            .xp-bar-container { width: 100px; height: 8px; margin-top: 5px; }
+            .stats { display: none; } /* Esconde estatísticas detalhadas no topo */
+            
+            /* Wrapper para avatar/nome no mobile */
+            .profile-header-group { display: flex; align-items: center; }
+
+            /* 2. CHAT FEED: Meio da tela */
+            .col-feed {
+                flex: 1; 
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            /* 3. QUEST LOG: Parte inferior fixa */
+            .col-quest-log {
+                height: 35vh; 
+                border-top: 2px solid var(--primary);
+                padding: 15px;
+                flex-shrink: 0;
+            }
+            .section-title { font-size: 1rem; margin-bottom: 10px; }
+            .quest-actions { padding-top: 10px; }
+            .config-row { padding: 5px; font-size: 0.8rem; }
+            .btn-submit { padding: 10px; font-size: 0.9rem; }
+            
+            .feed-list, #draft-list {
+                scrollbar-width: thin; 
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- TOOLTIP DE RIVALIDADE (Escondido) -->
     <div id="userTooltip">
-        <!-- Avatar Ampliado -->
         <div class="tooltip-avatar">
             <img id="tooltipAvatar" src="" alt="Avatar do Rival">
         </div>
@@ -301,7 +588,27 @@
         <div class="tooltip-stat"><span>Missões:</span> <span id="ttQuests">0</span></div>
     </div>
 
-    <!-- TELA DE LOGIN -->
+    <div class="shop-modal" id="shopModal">
+        <div class="shop-content">
+            <div class="shop-header">
+                <div class="shop-title"><i class="fa-solid fa-store"></i> Mercado Negro</div>
+                <div class="shop-close" id="btnCloseShop"><i class="fa-solid fa-times"></i></div>
+            </div>
+            <div class="shop-body">
+                <div class="shop-tabs">
+                    <div class="shop-tab-btn active" onclick="window.filterShop('icons')">Ícones</div>
+                    <div class="shop-tab-btn" onclick="window.filterShop('borders')">Bordas</div>
+                    <div class="shop-tab-btn" onclick="window.filterShop('titles')">Títulos</div>
+                </div>
+                <div class="shop-grid" id="shopGrid">
+                    </div>
+            </div>
+            <div style="padding:15px; border-top:1px solid var(--border); text-align:center; color: var(--gold); font-weight:bold;">
+                Seu Ouro: <span id="shopGoldDisplay">0</span> <i class="fa-solid fa-coins"></i>
+            </div>
+        </div>
+    </div>
+
     <div id="login-screen">
         <h1 style="margin-bottom: 10px; color: var(--primary); font-size: 3rem;"><i class="fa-solid fa-dragon"></i></h1>
         <h1 style="margin-bottom: 30px; font-size: 2rem;">Daily Quest RPG</h1>
@@ -309,59 +616,61 @@
         <p style="margin-top: 20px; color: #666; font-size: 0.8rem;">Acesso à Guilda Corporativa</p>
     </div>
 
-    <!-- APLICAÇÃO -->
-    <div id="app-container"> <!-- Começa escondido -->
-        
-        <!-- ESQUERDA: PERFIL -->
-        <div class="col-profile">
-            <div class="avatar-container">
-                <div class="avatar-frame">
-                    <img id="userAvatar" src="" alt="Avatar">
+    <div id="app-container"> <div class="col-profile">
+            <div class="profile-header-group" style="text-align: center;"> 
+                <div class="avatar-container" style="margin: 0 auto 10px auto;">
+                    <div class="avatar-frame" id="profileAvatarFrame">
+                        <img id="userAvatar" src="" alt="Avatar">
+                    </div>
+                    <div class="avatar-edit-overlay" id="btnEditAvatar" title="Mudar Avatar (URL/GIF)">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
                 </div>
-                <div class="avatar-edit-overlay" id="btnEditAvatar" title="Mudar Avatar (URL/GIF)">
-                    <i class="fa-solid fa-camera"></i>
+                <div>
+                    <h2 id="userName">Guerreiro</h2>
+                    <div class="user-title" id="userTitle">Nível 1</div>
                 </div>
             </div>
             
-            <h2 id="userName" style="text-align: center;">Guerreiro</h2>
-            <div class="user-title" id="userTitle">Nível 1</div>
-            
-            <div class="xp-bar-container">
-                <div class="xp-bar-fill" id="xpBar" style="width: 0%"></div>
-            </div>
-            <div style="font-size: 0.8rem; margin-top: 5px; color: #888;">XP: <span id="xpText" style="color: white;">0/100</span></div>
-
-            <div class="stats">
-                <p><i class="fa-solid fa-scroll"></i> Quests Feitas: <span id="questCount" style="color: white;">0</span></p>
-                <p><i class="fa-solid fa-trophy"></i> XP Total: <span id="totalXp" style="color: white;">0</span></p>
+            <div class="profile-stats-group">
+                <div class="xp-bar-container">
+                    <div class="xp-bar-fill" id="xpBar" style="width: 0%"></div>
+                </div>
+                <div style="font-size: 0.8rem; margin-top: 2px; color: var(--text-secondary); text-align: center;">XP: <span id="xpText" style="color: var(--text);">0/100</span></div>
+    
+                <div class="stats">
+                    <p><i class="fa-solid fa-scroll"></i> Quests Feitas: <span id="questCount" style="color: var(--text);">0</span></p>
+                    <p><i class="fa-solid fa-trophy"></i> XP Total: <span id="totalXp" style="color: var(--text);">0</span></p>
+                    <p style="color: var(--gold); font-weight: bold; border-bottom: none;"><i class="fa-solid fa-coins"></i> Gold: <span id="userGold">0</span></p>
+                </div>
             </div>
         </div>
 
-        <!-- CENTRO: FEED -->
         <div class="col-feed">
             <div class="feed-header">
                 <div><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Chat da Guilda</div>
                 
                 <div class="header-tools">
-                    <!-- BOTÃO PESQUISA -->
                     <div class="tool-btn" id="toggleSearchBtn" title="Pesquisar">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
 
-                    <!-- SINO DE NOTIFICAÇÃO -->
+                    <div class="tool-btn gold-btn" id="btnOpenShop" title="Loja">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+
                     <div class="tool-btn notification-container" id="notificationBtn" title="Notificações">
                         <i class="fa-solid fa-bell"></i>
                         <div class="notification-badge" id="notificationBadge">0</div>
                         <div class="notification-dropdown" id="notificationDropdown">
-                            <div style="padding:10px; font-weight:bold; border-bottom:1px solid #333; color: white;">Notificações</div>
+                            <div style="padding:10px; font-weight:bold; border-bottom:1px solid var(--border); color: var(--text);">Notificações</div>
                             <div id="notificationList">
-                                <div style="padding:10px; color:#666; font-size:0.8rem">Nenhuma notificação recente.</div>
+                                <div style="padding:10px; color:var(--text-secondary); font-size:0.8rem">Nenhuma notificação recente.</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PAINEL DE PESQUISA (Escondido) -->
                 <div class="search-container" id="searchContainer">
                     <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nome ou tarefa...">
                     <input type="date" id="searchDate" class="search-date">
@@ -372,18 +681,16 @@
             </div>
 
             <div class="feed-list" id="feedList">
-                <!-- Os cards vão entrar aqui via JS -->
-                <div style="text-align: center; color: #444; margin-top: 50px;" id="emptyFeedMsg">
+                <div style="text-align: center; color: var(--text-secondary); margin-top: 50px;" id="emptyFeedMsg">
                     <i class="fa-solid fa-ghost" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
                     Nenhum reporte enviado hoje...
                 </div>
             </div>
         </div>
 
-        <!-- DIREITA: QUEST LOG -->
         <div class="col-quest-log">
             <div class="section-title"><i class="fa-solid fa-feather"></i> Registrar Missão</div>
-            <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Adicione o que você fez durante o dia:</p>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Adicione o que você fez durante o dia:</p>
             
             <div class="input-group">
                 <input type="text" id="taskInput" placeholder="Ex: Finalizei o relatório...">
@@ -391,19 +698,23 @@
             </div>
 
             <ul id="draft-list">
-                <!-- Lista temporária aqui -->
-            </ul>
+                </ul>
 
             <div class="quest-actions">
                 <div class="section-title" style="font-size: 1rem; border:none; margin-bottom: 10px;"><i class="fa-solid fa-sliders"></i> Configurações</div>
                 
                 <div class="config-row">
                     <span><i class="fa-regular fa-clock"></i> Fim do Turno:</span>
-                    <input type="time" id="shiftEnd" value="18:00" style="background: #333; border:1px solid #555; color: white; padding: 5px; border-radius: 3px;">
+                    <input type="time" id="shiftEnd" value="18:00" style="background: var(--bg-input); border:1px solid var(--border); color: var(--text); padding: 5px; border-radius: 3px;">
                 </div>
                 <div class="config-row">
                     <span><i class="fa-solid fa-user-secret"></i> Modo Fantasma:</span>
                     <input type="checkbox" id="privateMode" style="width: 18px; height: 18px;">
+                </div>
+                
+                <div class="config-row">
+                    <span><i class="fa-solid fa-sun"></i> Tema Claro:</span>
+                    <input type="checkbox" id="themeToggle" style="width: 18px; height: 18px;">
                 </div>
 
                 <button class="btn-submit" id="btnSendReport">
@@ -413,7 +724,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS (FIREBASE E LÓGICA) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -440,7 +750,12 @@
 
         // Variáveis de Estado Local
         let currentUser = null;
-        let customAvatar = null; // Armazena avatar customizado
+        let currentUserLevel = 1; // NOVA VARIAVEL PARA CONTROLAR LOJA
+        let customAvatar = null; 
+        let currentGold = 0;
+        let userInventory = {}; // { itemKey: true }
+        let equippedItems = {}; // { border: 'x', title: 'y' }
+        
         let draftTasks = [];
         let autoSendInterval = null;
         let unreadNotifications = 0;
@@ -457,6 +772,9 @@
         const feedList = document.getElementById('feedList');
         const shiftEndInput = document.getElementById('shiftEnd');
         const btnEditAvatar = document.getElementById('btnEditAvatar');
+        
+        // Tema Claro/Escuro
+        const themeToggle = document.getElementById('themeToggle');
 
         // Notificações & Pesquisa
         const notificationBtn = document.getElementById('notificationBtn');
@@ -470,8 +788,62 @@
         const searchDate = document.getElementById('searchDate');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
 
+        // Loja
+        const btnOpenShop = document.getElementById('btnOpenShop');
+        const btnCloseShop = document.getElementById('btnCloseShop');
+        const shopModal = document.getElementById('shopModal');
+        const shopGrid = document.getElementById('shopGrid');
+
         // Tooltip Elements
         const userTooltip = document.getElementById('userTooltip');
+
+        // ==========================================================
+        // DADOS DA LOJA & TITULOS
+        // ==========================================================
+        
+        // Titulos por Nível (Constante)
+        const LEVEL_TITLES_DATA = [
+            "Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"
+        ];
+
+        const SHOP_ITEMS = [
+            // ÍCONES DE REAÇÃO
+            { id: 'icon_heart', name: 'Coração Padrão', type: 'icons', price: 0, value: 'fa-heart', default: true },
+            { id: 'icon_fire', name: 'Chama', type: 'icons', price: 50, value: 'fa-fire' },
+            { id: 'icon_star', name: 'Estrela', type: 'icons', price: 100, value: 'fa-star' },
+            { id: 'icon_thumb', name: 'Joinha', type: 'icons', price: 150, value: 'fa-thumbs-up' },
+            { id: 'icon_poo', name: 'Emoji Poo', type: 'icons', price: 200, value: 'fa-poo' },
+            { id: 'icon_ghost', name: 'Fantasma', type: 'icons', price: 300, value: 'fa-ghost' },
+            
+            // BORDAS
+            { id: 'border_gold', name: 'Borda Dourada', type: 'borders', price: 500, value: 'border-gold' },
+            { id: 'border_fire', name: 'Borda de Fogo', type: 'borders', price: 800, value: 'border-fire' },
+            { id: 'border_ice', name: 'Borda de Gelo', type: 'borders', price: 800, value: 'border-ice' },
+            { id: 'border_rainbow', name: 'RGB Gamer', type: 'borders', price: 2000, value: 'border-rainbow' },
+
+            // TÍTULOS (Premium)
+            { id: 'title_boss', name: 'Título: Big Boss', type: 'titles', price: 1000, value: 'Big Boss' },
+            { id: 'title_dev', name: 'Título: Senior Dev', type: 'titles', price: 1000, value: 'Senior Dev' },
+            { id: 'title_king', name: 'Título: O Rei', type: 'titles', price: 5000, value: 'O Rei' }
+        ];
+
+        // ==========================================================
+        // SISTEMA DE TEMA (DARK/LIGHT)
+        // ==========================================================
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if(savedTheme === 'light') themeToggle.checked = true;
+        }
+        themeToggle.addEventListener('change', () => {
+            if(themeToggle.checked) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
 
         // Toggle Pesquisa
         toggleSearchBtn.addEventListener('click', () => {
@@ -502,11 +874,175 @@
             }
         });
         
-        // Fecha dropdowns ao clicar fora
+        // Fecha dropdowns
         window.onclick = (e) => {
-            if (!notificationBtn.contains(e.target)) {
-                notificationDropdown.style.display = 'none';
+            if (!notificationBtn.contains(e.target)) notificationDropdown.style.display = 'none';
+        };
+
+        // ==========================================================
+        // SISTEMA DA LOJA
+        // ==========================================================
+        btnOpenShop.addEventListener('click', () => {
+            shopModal.style.display = 'flex';
+            window.filterShop('icons'); // Default tab
+        });
+        btnCloseShop.addEventListener('click', () => shopModal.style.display = 'none');
+
+        window.filterShop = function(type) {
+            // UI Tabs
+            document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.shop-tab-btn[onclick="window.filterShop('${type}')"]`).classList.add('active');
+            
+            shopGrid.innerHTML = '';
+            
+            // SEÇÃO ESPECIAL PARA TÍTULOS (MOSTRAR OS DESBLOQUEADOS POR NÍVEL PRIMEIRO)
+            if (type === 'titles') {
+                // Header Seção 1
+                const label1 = document.createElement('div');
+                label1.className = 'shop-section-label';
+                label1.innerText = 'Progresso de Nível';
+                shopGrid.appendChild(label1);
+
+                LEVEL_TITLES_DATA.forEach((titleName, index) => {
+                    const requiredLevel = index + 1;
+                    const isUnlocked = currentUserLevel >= requiredLevel;
+                    const isEquipped = equippedItems.title === titleName;
+
+                    let btnHtml = '';
+                    let itemClass = isUnlocked ? 'shop-item owned' : 'shop-item locked';
+
+                    if (!isUnlocked) {
+                        btnHtml = `<button class="btn-locked">Bloqueado (Nvl ${requiredLevel})</button>`;
+                    } else if (isEquipped) {
+                        btnHtml = `<button class="btn-equip" style="background:#444; color:#fff; cursor:default">Equipado</button>`;
+                    } else {
+                        // Passamos um ID falso "level_title_X" para o equipItem saber o que fazer
+                        btnHtml = `<button class="btn-equip" onclick="window.equipItem('level_title_${index}', '${titleName}')">Equipar</button>`;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = itemClass;
+                    div.innerHTML = `
+                        <div class="item-preview"><span style="font-size:0.8rem">${titleName}</span></div>
+                        <div class="item-name">${titleName}</div>
+                        <div class="item-price" style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:5px;">Nível ${requiredLevel}</div>
+                        ${btnHtml}
+                    `;
+                    shopGrid.appendChild(div);
+                });
+
+                // Header Seção 2
+                const label2 = document.createElement('div');
+                label2.className = 'shop-section-label';
+                label2.innerText = 'Títulos Premium';
+                shopGrid.appendChild(label2);
             }
+
+
+            // RENDERIZA ITENS NORMAIS DA LOJA (OU TITULOS PREMIUM)
+            const items = SHOP_ITEMS.filter(i => i.type === type);
+
+            items.forEach(item => {
+                const owned = userInventory[item.id] || item.default;
+                let btnHtml = '';
+                
+                if (owned) {
+                    if (type === 'icons') {
+                        btnHtml = `<div style="color:var(--secondary); font-size:0.8rem; margin-top:auto;">Comprado (Automático)</div>`;
+                    } else {
+                        // Lógica de Equipar
+                        const isEquipped = (type === 'borders' && equippedItems.border === item.value) ||
+                                           (type === 'titles' && equippedItems.title === item.value);
+                        
+                        if(isEquipped) {
+                            btnHtml = `<button class="btn-equip" style="background:#444; color:#fff; cursor:default">Equipado</button>`;
+                        } else {
+                            btnHtml = `<button class="btn-equip" onclick="window.equipItem('${item.id}')">Equipar</button>`;
+                        }
+                    }
+                } else {
+                    btnHtml = `<button class="btn-buy" onclick="window.buyItem('${item.id}')">Comprar ${item.price}$</button>`;
+                }
+
+                // Preview Visual
+                let previewHtml = '';
+                if(type === 'icons') previewHtml = `<i class="fa-solid ${item.value}"></i>`;
+                if(type === 'borders') previewHtml = `<div style="width:40px; height:40px; border-radius:50%; border:3px solid #333;" class="${item.value} profile-${item.value}"></div>`;
+                if(type === 'titles') previewHtml = `<span style="font-size:0.8rem">${item.value}</span>`;
+
+                const div = document.createElement('div');
+                div.className = `shop-item ${owned ? 'owned' : ''}`;
+                div.innerHTML = `
+                    ${owned ? '<i class="fa-solid fa-check item-owned-tag"></i>' : ''}
+                    <div class="item-preview">${previewHtml}</div>
+                    <div class="item-name">${item.name}</div>
+                    ${!owned ? `<div class="item-price">${item.price} Gold</div>` : ''}
+                    ${btnHtml}
+                `;
+                shopGrid.appendChild(div);
+            });
+            document.getElementById('shopGoldDisplay').textContent = currentGold;
+        };
+
+        window.buyItem = function(itemId) {
+            const item = SHOP_ITEMS.find(i => i.id === itemId);
+            if(!item) return;
+            if(currentGold < item.price) {
+                alert("Gold insuficiente!");
+                return;
+            }
+            
+            if(confirm(`Comprar ${item.name} por ${item.price} Gold?`)) {
+                const newGold = currentGold - item.price;
+                const newItemRef = {};
+                newItemRef[item.id] = true;
+
+                update(ref(db, `users/${currentUser.uid}`), {
+                    gold: newGold
+                });
+                update(ref(db, `users/${currentUser.uid}/inventory`), newItemRef).then(() => {
+                    currentGold = newGold;
+                    userInventory[item.id] = true;
+                    updateUIStats();
+                    window.filterShop(item.type); // Refresh
+                    alert("Item comprado!");
+                });
+            }
+        };
+
+        // Função EquipItem atualizada para aceitar Títulos de Nível
+        window.equipItem = function(itemId, optionalValue) {
+            let updateData = {};
+            let typeToRefresh = '';
+
+            // Se for um título de nível (passado manualmente)
+            if(itemId.startsWith('level_title_')) {
+                updateData.title = optionalValue;
+                typeToRefresh = 'titles';
+            } else {
+                // Item de Loja normal
+                const item = SHOP_ITEMS.find(i => i.id === itemId);
+                if(!item) return;
+                
+                typeToRefresh = item.type;
+                if(item.type === 'borders') updateData.border = item.value;
+                if(item.type === 'titles') updateData.title = item.value;
+            }
+
+            update(ref(db, `users/${currentUser.uid}/equipped`), updateData).then(() => {
+                equippedItems = { ...equippedItems, ...updateData };
+                window.filterShop(typeToRefresh); // Refresh button state
+                
+                // Atualiza visual localmente
+                if(updateData.border) {
+                    document.getElementById('profileAvatarFrame').className = 'avatar-frame profile-' + updateData.border;
+                }
+                if(updateData.title) {
+                    // Atualiza o título na UI imediatamente
+                    updateUIStats(parseInt(document.getElementById('totalXp').innerText), currentUserLevel, parseInt(document.getElementById('questCount').innerText));
+                }
+                alert("Item equipado!");
+            });
         };
 
         // ==========================================================
@@ -538,40 +1074,32 @@
             const term = searchInput.value.toLowerCase();
             const dateVal = searchDate.value; // YYYY-MM-DD
 
-            // Filtra o array de cache
             const filtered = allFeedData.filter(item => {
                 const data = item.val;
-                
-                // Filtro de Data
                 let dateMatch = true;
                 if(dateVal) {
                     const itemDate = new Date(data.timestamp);
                     const itemDateStr = itemDate.toLocaleDateString('en-CA'); 
                     if(itemDateStr !== dateVal) dateMatch = false;
                 }
-
-                // Filtro de Texto
                 let textMatch = true;
                 if(term) {
                     const nameMatch = data.name.toLowerCase().includes(term);
                     const taskMatch = data.tasks && data.tasks.some(t => t.toLowerCase().includes(term));
                     if(!nameMatch && !taskMatch) textMatch = false;
                 }
-
                 return dateMatch && textMatch;
             });
 
-            // Re-renderiza
             feedList.innerHTML = '';
             if(filtered.length === 0) {
-                 feedList.innerHTML = '<div style="text-align:center; color:#666; margin-top:30px;">Nenhum resultado encontrado.</div>';
+                 feedList.innerHTML = '<div style="text-align:center; color: var(--text-secondary); margin-top:30px;">Nenhum resultado encontrado.</div>';
             } else {
                 filtered.forEach(item => {
                     renderCardToDOM(item.val, item.key);
                 });
             }
         }
-
         searchInput.addEventListener('input', filterFeed);
         searchDate.addEventListener('change', filterFeed);
         clearSearchBtn.addEventListener('click', () => {
@@ -586,10 +1114,9 @@
         function renderDrafts() {
             draftList.innerHTML = '';
             if(draftTasks.length === 0) {
-                draftList.innerHTML = '<li style="background:none; color:#555; justify-content:center;">Lista vazia...</li>';
+                draftList.innerHTML = '<li style="background:none; color: var(--text-secondary); justify-content:center;">Lista vazia...</li>';
                 return;
             }
-
             draftTasks.forEach((task, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
@@ -604,7 +1131,6 @@
                 draftList.appendChild(li);
             });
         }
-
         taskInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addTask();
         });
@@ -637,10 +1163,17 @@
             // Usa avatar customizado ou o do Google
             const finalAvatar = customAvatar || currentUser.photoURL;
 
+            // Pega itens equipados para salvar no histórico do log ("Snapshoting")
+            // Assim o log antigo mantém a borda antiga se trocar.
+            const currentBorder = equippedItems.border || '';
+            const currentTitle = equippedItems.title || '';
+
             const reportData = {
                 uid: currentUser.uid,
                 name: currentUser.displayName,
                 avatar: finalAvatar,
+                authorBorder: currentBorder, // Salva borda equipada
+                authorTitle: currentTitle,   // Salva título equipado
                 tasks: draftTasks,
                 timestamp: Date.now(),
                 isAuto: isAuto,
@@ -670,9 +1203,8 @@
 
         window.deleteLog = function(key, xpToRemove, uid) {
             if(currentUser.uid !== uid) return;
-            if(confirm(`Tem certeza? Você perderá ${xpToRemove} XP.`)) {
+            if(confirm(`Tem certeza? Você perderá ${xpToRemove} XP e Gold.`)) {
                 remove(ref(db, 'logs/' + key));
-                // Penalidade tmb remove contagem de quests? Por simplicidade, só XP.
                 giveXP(-xpToRemove, 0); 
             }
         }
@@ -722,7 +1254,7 @@
                     xp: newTotalXp
                 }).then(() => {
                     if(xpDiff !== 0) {
-                        giveXP(xpDiff, diffCount); // Atualiza também contagem de quests
+                        giveXP(xpDiff, diffCount); 
                         const msg = xpDiff > 0 ? `Adicionou tarefas: +${xpDiff} XP` : `Removeu tarefas: ${xpDiff} XP`;
                         alert(`Daily atualizada! ${msg}`);
                     }
@@ -735,13 +1267,16 @@
             if(section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
         }
 
-        window.likeLog = function(key, ownerUid) {
+        // SISTEMA DE CURTIR COM ÍCONES
+        window.likeLog = function(key, ownerUid, iconType = 'fa-heart') {
             const likesRef = ref(db, `logs/${key}/likes/${currentUser.uid}`);
             get(likesRef).then((snapshot) => {
                 if(snapshot.exists()) {
+                    // Se já curtiu, remove (toggle)
                     remove(likesRef); 
                 } else {
-                    update(ref(db, `logs/${key}/likes`), { [currentUser.uid]: true }); 
+                    // Salva o tipo de ícone que o usuário usou
+                    update(ref(db, `logs/${key}/likes`), { [currentUser.uid]: iconType }); 
                     if(ownerUid !== currentUser.uid) sendNotification(ownerUid, 'liked');
                 }
             });
@@ -766,11 +1301,9 @@
 
         // TOOLTIP DE RIVALIDADE (HOVER)
         window.showTooltip = function(event, uid, cardAvatarUrl) {
-            // Usa o avatar do card como fallback imediato
             const avatarEl = document.getElementById('tooltipAvatar');
             if(cardAvatarUrl) avatarEl.src = cardAvatarUrl;
 
-            // Busca dados atualizados do usuário alvo
             get(ref(db, 'users/' + uid)).then((snapshot) => {
                 if(snapshot.exists()) {
                     const data = snapshot.val();
@@ -778,13 +1311,17 @@
                     const xp = data.xp || 0;
                     const quests = data.questsCompleted || 0;
                     
-                    // Se o usuário tiver um avatar salvo no perfil, usa ele (pode ser mais novo que o do card)
                     if(data.avatar) avatarEl.src = data.avatar;
 
-                    // Titulos (Mesma lógica do updateUIStats)
-                    const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
-                    const titleIndex = Math.min(level - 1, titles.length - 1);
-                    const title = titles[titleIndex];
+                    // Títulos
+                    let title = "Novato";
+                    // Se tiver título equipado, usa ele. Se não, usa o padrão por nível
+                    if(data.equipped && data.equipped.title) {
+                        title = data.equipped.title;
+                    } else {
+                        const titleIndex = Math.min(level - 1, LEVEL_TITLES_DATA.length - 1);
+                        title = LEVEL_TITLES_DATA[titleIndex];
+                    }
 
                     document.getElementById('tooltipName').textContent = data.displayName || "Usuário";
                     document.getElementById('tooltipTitle').textContent = title;
@@ -895,9 +1432,24 @@
                 </div>`;
             }
 
+            // Lógica de Likes e Reações
             const likeCount = data.likes ? Object.keys(data.likes).length : 0;
-            const userLiked = data.likes && data.likes[currentUser.uid] ? 'liked' : '';
+            const myLikeType = data.likes && data.likes[currentUser.uid]; // Pode ser true (antigo) ou string 'fa-fire'
+            const userLikedClass = myLikeType ? 'liked' : '';
             
+            // Ícone do botão principal (Se eu curti, mostra meu ícone, senão heart)
+            let mainLikeIcon = 'fa-heart';
+            if(typeof myLikeType === 'string') mainLikeIcon = myLikeType;
+
+            // Gera HTML do popup de reações com base no inventário
+            let reactionPopupHtml = '';
+            SHOP_ITEMS.filter(i => i.type === 'icons').forEach(icon => {
+                // Se o usuário tem o ícone ou é padrão
+                if(icon.default || userInventory[icon.id]) {
+                    reactionPopupHtml += `<div class="reaction-icon" onclick="window.likeLog('${key}', '${data.uid}', '${icon.value}')"><i class="fa-solid ${icon.value}" style="${icon.value === 'fa-heart' ? 'color:#ff5555' : 'color:var(--primary)'}"></i></div>`;
+                }
+            });
+
             let commentsHtml = '';
             if(data.comments) {
                 Object.values(data.comments).forEach(c => {
@@ -917,13 +1469,22 @@
                 });
             }
 
+            // Borda do Autor (Do Snapshot do Log)
+            const authorBorderClass = data.authorBorder || '';
+
             const cardContent = `
                 ${menuHtml}
                 <div class="card-header">
                     <div class="card-user" onmouseenter="window.showTooltip(event, '${data.uid}', '${data.avatar}')" onmouseleave="window.hideTooltip()">
-                        <img src="${data.avatar}"> ${data.name.split(' ')[0]} ${autoTag} ${privateTag}
+                        <div class="chat-avatar-wrapper">
+                            <img src="${data.avatar}" class="chat-avatar-img">
+                            <div class="border-overlay ${authorBorderClass}"></div>
+                        </div>
+
+                        ${data.name.split(' ')[0]} 
+                        ${data.authorTitle ? `<span style="font-size:0.7rem; color:var(--gold); border:1px solid var(--border); padding:1px 4px; border-radius:3px;">${data.authorTitle}</span>` : ''}
+                        ${autoTag} ${privateTag}
                     </div>
-                    <!-- DATA E HORA DESTACADOS -->
                     <div class="timestamp-badge">
                         <i class="fa-regular fa-calendar"></i> ${dateStr} 
                         <span style="opacity:0.5">|</span> 
@@ -936,17 +1497,23 @@
                 </div>
                 
                 <div class="card-actions">
-                    <div class="action-btn ${userLiked}" onclick="window.likeLog('${key}', '${data.uid}')">
-                        <i class="fa-solid fa-heart"></i> ${likeCount || 'Curtir'}
+                    <div class="like-container">
+                        <div class="reaction-popup" id="reactions-${key}">
+                            ${reactionPopupHtml}
+                        </div>
+                        <div class="action-btn ${userLikedClass}" onclick="window.likeLog('${key}', '${data.uid}')">
+                            <i class="fa-solid ${mainLikeIcon}"></i> ${likeCount || 'Curtir'}
+                        </div>
                     </div>
+
                     <div class="action-btn" onclick="window.toggleComments('${key}')">
                         <i class="fa-solid fa-comment"></i> Comentar
                     </div>
-                    <div style="flex:1; text-align:right; font-size:0.7rem; color:#555; align-self:center;">+${data.xp || 0} XP</div>
+                    <div style="flex:1; text-align:right; font-size:0.7rem; color: var(--text-secondary); align-self:center;">+${data.xp || 0} XP</div>
                 </div>
 
                 <div class="comments-section" id="comments-${key}">
-                    <div class="comment-list">${commentsHtml || '<div style="color:#666; font-style:italic;">Seja o primeiro a comentar...</div>'}</div>
+                    <div class="comment-list">${commentsHtml || '<div style="color: var(--text-secondary); font-style:italic;">Seja o primeiro a comentar...</div>'}</div>
                     <div class="comment-input-group">
                         <input type="text" id="input-comment-${key}" placeholder="Escreva algo..." onkeypress="if(event.key === 'Enter') window.submitComment('${key}', '${data.uid}')">
                         <button onclick="window.submitComment('${key}', '${data.uid}')" style="background:var(--primary); color:white; border:none; padding:0 10px; border-radius:3px; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
@@ -968,7 +1535,6 @@
             card.className = `quest-card ${data.isAuto ? 'auto-sent' : ''}`;
             card.innerHTML = cardContent;
             
-            // Adiciona no fim
             feedList.appendChild(card);
             feedList.scrollTop = feedList.scrollHeight;
         }
@@ -979,18 +1545,20 @@
         function giveXP(xpAmount, questsAmount) {
             const userRef = ref(db, 'users/' + currentUser.uid);
             get(userRef).then((snapshot) => {
-                let currentXP = 0; let currentLevel = 1; let questsCompleted = 0;
-                let displayName = currentUser.displayName; // Garante que o nome esteja salvo tmb
+                let currentXP = 0; let currentLevel = 1; let questsCompleted = 0; let gold = 0;
+                let displayName = currentUser.displayName; 
 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     currentXP = data.xp || 0; 
                     currentLevel = data.level || 1;
                     questsCompleted = data.questsCompleted || 0;
+                    gold = data.gold || 0;
                 }
 
                 currentXP += xpAmount;
                 questsCompleted += questsAmount;
+                gold += xpAmount; // Gold ganho é igual ao XP ganho
                 
                 const xpToNextLevel = currentLevel * 150;
                 
@@ -999,6 +1567,8 @@
                     currentXP = currentXP - xpToNextLevel;
                     alert(`LEVEL UP! NÍVEL ${currentLevel}!`);
                 }
+                
+                // Penalidade (XP negativo)
                 if (currentXP < 0) {
                     if (currentLevel > 1) {
                         currentLevel--;
@@ -1007,14 +1577,18 @@
                     } else currentXP = 0;
                 }
 
-                // Salva tudo, incluindo nome e avatar atualizado
+                // Salva tudo
                 update(userRef, { 
                     xp: currentXP, 
                     level: currentLevel, 
                     questsCompleted: questsCompleted,
+                    gold: gold,
                     displayName: displayName, 
                     lastUpdate: Date.now() 
                 });
+                // Atualiza variáveis locais
+                currentGold = gold;
+                currentUserLevel = currentLevel;
                 updateUIStats(currentXP, currentLevel, questsCompleted);
             });
         }
@@ -1030,6 +1604,18 @@
                     } else {
                          document.getElementById('userAvatar').src = currentUser.photoURL;
                     }
+                    
+                    // Carrega Inventário e Equipados
+                    userInventory = data.inventory || {};
+                    equippedItems = data.equipped || {};
+                    currentGold = data.gold || 0;
+                    currentUserLevel = data.level || 1;
+
+                    // Aplica borda visualmente no perfil
+                    if(equippedItems.border) {
+                        document.getElementById('profileAvatarFrame').className = 'avatar-frame profile-' + equippedItems.border;
+                    }
+
                     updateUIStats(data.xp || 0, data.level || 1, data.questsCompleted || 0);
                 } else {
                     document.getElementById('userAvatar').src = currentUser.photoURL;
@@ -1037,20 +1623,32 @@
             });
         }
 
-        function updateUIStats(xp, level, quests) {
+        function updateUIStats(xp = 0, level = 1, quests = 0) {
             const maxXp = level * 150;
             const percentage = Math.max(0, (xp / maxXp) * 100);
-            const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
-            const titleIndex = Math.min(level - 1, titles.length - 1);
             
-            document.getElementById('userTitle').textContent = `${titles[titleIndex]} (Nvl. ${level})`;
+            // Define título (Equipado ou Padrão)
+            let title = "";
+            if(equippedItems && equippedItems.title) {
+                // Se o usuário EQUIPOU algo (mesmo que seja um título de nível antigo), usa isso
+                title = equippedItems.title;
+            } else {
+                // Se não equipou nada, usa o título do maior nível possível automaticamente
+                const titleIndex = Math.min(level - 1, LEVEL_TITLES_DATA.length - 1);
+                title = LEVEL_TITLES_DATA[titleIndex];
+            }
+            
+            document.getElementById('userTitle').textContent = `${title} (Nvl. ${level})`;
             document.getElementById('xpText').textContent = `${xp}/${maxXp}`;
             document.getElementById('xpBar').style.width = `${percentage}%`;
             
-            // Total XP (Nivel base + XP atual)
             const totalXpCalc = xp + (level > 1 ? (level-1)*150 : 0);
             document.getElementById('totalXp').textContent = totalXpCalc; 
             document.getElementById('questCount').textContent = quests;
+            
+            // Update Gold
+            document.getElementById('userGold').textContent = currentGold;
+            document.getElementById('shopGoldDisplay').textContent = currentGold;
         }
 
         function startAutoSendMonitor() {
