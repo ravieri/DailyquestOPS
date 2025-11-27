@@ -264,6 +264,33 @@
         .notification-item:hover { background: var(--hover-item); }
         .notification-item i { color: var(--primary); }
 
+        /* TOAST CONTAINER (POP UPS DE NOTIFICAÇÃO) */
+        #toast-container {
+            position: fixed; bottom: 20px; right: 20px;
+            display: flex; flex-direction: column; gap: 10px;
+            z-index: 9999;
+        }
+        .toast {
+            background: var(--bg-panel); 
+            border-left: 4px solid var(--primary);
+            padding: 15px; border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            min-width: 280px; max-width: 350px;
+            display: flex; align-items: center; gap: 12px;
+            animation: toastSlideIn 0.3s ease-out;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .toast.hide { animation: toastSlideOut 0.3s ease-in forwards; }
+        
+        @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes toastSlideOut {
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
         /* CARD DE REPORT */
         .quest-card {
             background: var(--bg-panel); border-left: 5px solid var(--primary);
@@ -582,6 +609,8 @@
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
     <div id="userTooltip">
         <div class="tooltip-avatar">
             <img id="tooltipAvatar" src="" alt="Avatar do Rival">
@@ -771,6 +800,9 @@
         let autoSendInterval = null;
         let unreadNotifications = 0;
         let allFeedData = []; 
+        
+        // TIMESTAMP DE INICIO (PARA FILTRAR TOASTS ANTIGOS)
+        const appStartTime = Date.now();
 
         // Elementos DOM
         const loginScreen = document.getElementById('login-screen');
@@ -808,8 +840,9 @@
         const shopModal = document.getElementById('shopModal');
         const shopGrid = document.getElementById('shopGrid');
 
-        // Tooltip Elements
+        // Tooltip & Toasts
         const userTooltip = document.getElementById('userTooltip');
+        const toastContainer = document.getElementById('toast-container');
 
         // ==========================================================
         // DADOS DA LOJA & TITULOS
@@ -1384,23 +1417,48 @@
             push(ref(db, `notifications/${targetUid}`), noteData);
         }
 
+        // FUNÇÃO DE TOAST (POP UP)
+        function showToast(text, iconHtml) {
+            const div = document.createElement('div');
+            div.className = 'toast';
+            div.innerHTML = `${iconHtml} <span>${text}</span>`;
+            
+            toastContainer.appendChild(div);
+            
+            // Remove depois de 4 segundos
+            setTimeout(() => {
+                div.classList.add('hide');
+                setTimeout(() => div.remove(), 300); // Espera animação CSS
+            }, 4000);
+        }
+
         function listenForNotifications() {
             const noteRef = ref(db, `notifications/${currentUser.uid}`);
             onChildAdded(noteRef, (snapshot) => {
                 const data = snapshot.val();
-                if(Date.now() - data.timestamp > 3600000) return;
-
-                unreadNotifications++;
-                notificationBadge.innerText = unreadNotifications;
-                notificationBadge.style.opacity = '1';
-
-                const div = document.createElement('div');
-                div.className = 'notification-item';
-                const icon = data.type === 'liked' ? '<i class="fa-solid fa-heart" style="color:#ff5555"></i>' : '<i class="fa-solid fa-comment" style="color:#8257e6"></i>';
-                const action = data.type === 'liked' ? 'curtiu seu report.' : 'comentou no seu report.';
                 
-                div.innerHTML = `${icon} <span><b>${data.name || data.fromName}</b> ${action}</span>`;
-                notificationList.prepend(div);
+                // NOTIFICAÇÃO DO MENU SUPERIOR (Mantém histórico de 1h)
+                if(Date.now() - data.timestamp < 3600000) {
+                    unreadNotifications++;
+                    notificationBadge.innerText = unreadNotifications;
+                    notificationBadge.style.opacity = '1';
+
+                    const div = document.createElement('div');
+                    div.className = 'notification-item';
+                    const icon = data.type === 'liked' ? '<i class="fa-solid fa-heart" style="color:#ff5555"></i>' : '<i class="fa-solid fa-comment" style="color:#8257e6"></i>';
+                    const action = data.type === 'liked' ? 'curtiu seu report.' : 'comentou no seu report.';
+                    
+                    div.innerHTML = `${icon} <span><b>${data.name || data.fromName}</b> ${action}</span>`;
+                    notificationList.prepend(div);
+                }
+
+                // TOAST POP UP (APENAS EVENTOS AO VIVO)
+                // Verifica se a notificação foi criada DEPOIS que a página abriu
+                if (data.timestamp > appStartTime) {
+                    const msg = `<b>${data.fromName}</b> ${data.type === 'liked' ? 'curtiu' : 'comentou'}`;
+                    const icon = data.type === 'liked' ? '<i class="fa-solid fa-heart" style="color:#ff5555"></i>' : '<i class="fa-solid fa-comment" style="color:#8257e6"></i>';
+                    showToast(msg, icon);
+                }
             });
         }
 
@@ -1618,7 +1676,6 @@
                 });
                 // Atualiza variáveis locais
                 currentGold = gold;
-                currentUserLevel = currentLevel;
                 updateUIStats(currentXP, currentLevel, questsCompleted);
             });
         }
@@ -1639,7 +1696,6 @@
                     userInventory = data.inventory || {};
                     equippedItems = data.equipped || {};
                     currentGold = data.gold || 0;
-                    currentUserLevel = data.level || 1;
 
                     // Aplica borda visualmente no perfil
                     if(equippedItems.border) {
@@ -1660,12 +1716,11 @@
             // Define título (Equipado ou Padrão)
             let title = "";
             if(equippedItems && equippedItems.title) {
-                // Se o usuário EQUIPOU algo (mesmo que seja um título de nível antigo), usa isso
                 title = equippedItems.title;
             } else {
-                // Se não equipou nada, usa o título do maior nível possível automaticamente
-                const titleIndex = Math.min(level - 1, LEVEL_TITLES_DATA.length - 1);
-                title = LEVEL_TITLES_DATA[titleIndex];
+                const titles = ["Novato", "Aprendiz", "Guerreiro", "Veterano", "Elite", "Lendário", "Semi-Deus"];
+                const titleIndex = Math.min(level - 1, titles.length - 1);
+                title = titles[titleIndex];
             }
             
             document.getElementById('userTitle').textContent = `${title} (Nvl. ${level})`;
