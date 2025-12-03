@@ -11,9 +11,9 @@
             --bg-dark: #0d0d0f;
             --bg-panel: #1a1a1d;
             --bg-slot: #2a2a30;
-            --primary: #ff5555; /* Dano Físico */
-            --magic: #8257e6;   /* Dano Mágico */
-            --rogue: #04d361;   /* Agilidade/Critico */
+            --primary: #ff5555;
+            --magic: #8257e6;
+            --rogue: #04d361;
             --gold: #ffd700;
             --text: #e1e1e6;
             --text-secondary: #a8a8b3;
@@ -27,7 +27,6 @@
         
         body { background-color: var(--bg-dark); color: var(--text); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; transition: 0.1s; }
 
-        /* ANIMAÇÃO DE DANO (SCREEN SHAKE) */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -46,7 +45,6 @@
             box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.5);
         }
 
-        /* TELA DE LOGIN */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 999;
@@ -59,7 +57,6 @@
         }
         .btn-login:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--primary); }
 
-        /* LAYOUT DO JOGO */
         #game-container { display: none; height: 100%; display: grid; grid-template-rows: 60px 1fr; }
         
         header {
@@ -68,12 +65,10 @@
         }
         .gold-display { color: var(--gold); font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
 
-        /* GRID PRINCIPAL */
         .main-grid {
             display: grid; grid-template-columns: 300px 1fr 350px; height: 100%; overflow: hidden;
         }
 
-        /* COLUNA ESQUERDA: PERSONAGEM */
         .col-char { background: var(--bg-panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
         
         .char-card { width: 100%; text-align: center; position: relative; }
@@ -91,11 +86,9 @@
         .stat-row:last-child { border: none; margin: 0; }
         .stat-val { font-weight: bold; color: var(--text); }
         
-        /* BARRA DE VIDA DO PLAYER */
         .player-hp-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-top: 5px; border: 1px solid #555; }
         .player-hp-fill { height: 100%; background: #ff5555; width: 100%; transition: width 0.3s; }
 
-        /* EQUIPAMENTOS */
         .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
         .equip-slot {
             background: var(--bg-dark); border: 2px dashed var(--border); height: 60px; border-radius: 6px;
@@ -106,7 +99,6 @@
         .equip-slot i { font-size: 1.5rem; color: var(--border); }
         .equip-slot img { width: 40px; height: 40px; }
 
-        /* COLUNA CENTRO: COMBATE */
         .col-battle { 
             position: relative; 
             background: url('https://i.pinimg.com/originals/2c/83/92/2c8392f447f526eb6d341904791e8470.gif') no-repeat center center; 
@@ -140,7 +132,6 @@
         .dmg-miss { color: #aaa; font-size: 1.5rem; }
         .dmg-player { color: #ff5555; font-size: 2.5rem; text-shadow: 0 0 10px red; }
 
-        /* TELA DE START DUNGEON */
         #dungeon-start {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -157,7 +148,6 @@
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 85, 85, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0); } }
 
-        /* MODAL DE VITÓRIA/DERROTA */
         #result-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30;
             background: rgba(0,0,0,0.8); display: none; 
@@ -179,7 +169,6 @@
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* LOG DE BATALHA */
         #battleLog { 
             height: 150px; width: 100%; background: rgba(0,0,0,0.6); 
             overflow-y: auto; padding: 15px; font-size: 0.9rem; 
@@ -188,7 +177,6 @@
         }
         .log-entry { padding-left: 10px; border-left: 3px solid #555; }
 
-        /* COLUNA DIREITA: INVENTÁRIO & LOJA */
         .col-inventory { background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
         .tabs { display: flex; border-bottom: 1px solid var(--border); }
         .tab-btn { flex: 1; padding: 15px; background: var(--bg-panel); border: none; color: var(--text-secondary); cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; }
@@ -213,7 +201,6 @@
         .shop-price { color: var(--gold); font-weight: bold; font-size: 0.9rem; }
         .btn-buy { background: var(--gold); color: black; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* SELEÇÃO DE CLASSE */
         #class-selection { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-dark); z-index: 1000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
         .class-options { display: flex; gap: 20px; }
         .class-card { 
@@ -226,7 +213,6 @@
         .class-mage:hover { border-color: #8257e6; box-shadow: 0 0 20px rgba(130, 87, 230, 0.3); }
         .class-rogue:hover { border-color: #04d361; box-shadow: 0 0 20px rgba(4, 211, 97, 0.3); }
 
-        /* ITEM TOOLTIP */
         .item-tooltip {
             position: absolute; background: #000; border: 1px solid #555; padding: 10px; border-radius: 5px;
             color: #fff; font-size: 0.8rem; pointer-events: none; z-index: 5000; display: none; width: 200px;
@@ -335,8 +321,7 @@
                 </div>
 
                 <div id="result-modal">
-                    <div class="result-content" id="resultContent">
-                        </div>
+                    <div class="result-content" id="resultContent"></div>
                 </div>
 
                 <div class="battle-stage" id="battleStage" style="opacity: 0; pointer-events: none; transition: opacity 0.5s;">
@@ -389,7 +374,6 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getDatabase, ref, update, onValue, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAOX9F98z780iU37DaaRtG0-htJf0ke0hs",
             authDomain: "daily-quest-51660.firebaseapp.com",
@@ -412,42 +396,32 @@
             rogue: { name: "Ladino", hpMod: 1.0, str: 5, int: 4, agi: 10, color: "#04d361" }
         };
 
-        // --- DATABASE DE ITENS EXPANDIDO ---
         const ITEMS_DB = {
-            // ARMAS UNIVERSAIS
             "w_breadknife": { name: "Faca de Pão", type: "weapon", class: "all", str: 2, int: 0, agi: 1, price: 10, rarity: "common", icon: "fa-utensils" },
-            
-            // GUERREIRO
             "w_sword1": { name: "Espada Velha", type: "weapon", class: "warrior", str: 5, int: 0, agi: 0, price: 100, rarity: "common", icon: "fa-khanda" },
             "w_sword2": { name: "Lâmina de Aço", type: "weapon", class: "warrior", str: 15, int: 0, agi: 2, price: 500, rarity: "rare", icon: "fa-khanda" },
             "w_sword3": { name: "Matadora de Dragões", type: "weapon", class: "warrior", str: 40, int: 5, agi: 5, price: 2000, rarity: "epic", icon: "fa-dragon" },
             "a_plate": { name: "Peitoral de Ferro", type: "armor", class: "warrior", hp: 100, price: 400, rarity: "rare", icon: "fa-shield-cat" },
             "a_heavy": { name: "Armadura de Mithril", type: "armor", class: "warrior", hp: 300, price: 2500, rarity: "epic", icon: "fa-shield-halved" },
-
-            // MAGO
             "w_staff1": { name: "Galho Mágico", type: "weapon", class: "mage", str: 1, int: 6, agi: 0, price: 100, rarity: "common", icon: "fa-wand-magic-sparkles" },
             "w_staff2": { name: "Cajado Arcano", type: "weapon", class: "mage", str: 2, int: 18, agi: 1, price: 600, rarity: "rare", icon: "fa-wand-sparkles" },
             "w_staff3": { name: "Cajado do Vazio", type: "weapon", class: "mage", str: 5, int: 45, agi: 5, price: 2200, rarity: "epic", icon: "fa-meteor" },
             "a_robe": { name: "Manto do Aprendiz", type: "armor", class: "mage", hp: 50, int: 5, price: 300, rarity: "common", icon: "fa-user-graduate" },
             "a_robe2": { name: "Manto Arquimago", type: "armor", class: "mage", hp: 150, int: 20, price: 2000, rarity: "epic", icon: "fa-hat-wizard" },
-
-            // LADINO
             "w_dagger1": { name: "Adaga Simples", type: "weapon", class: "rogue", str: 3, int: 0, agi: 4, price: 100, rarity: "common", icon: "fa-bolt" },
             "w_dagger2": { name: "Lâmina Sombria", type: "weapon", class: "rogue", str: 5, int: 0, agi: 12, price: 550, rarity: "rare", icon: "fa-skull" },
             "w_dagger3": { name: "Fantasma Noturno", type: "weapon", class: "rogue", str: 10, int: 0, agi: 35, price: 2100, rarity: "epic", icon: "fa-ghost" },
             "a_light": { name: "Colete de Couro", type: "armor", class: "rogue", hp: 80, agi: 5, price: 350, rarity: "common", icon: "fa-vest" },
             "a_light2": { name: "Traje Ninja", type: "armor", class: "rogue", hp: 180, agi: 25, price: 2100, rarity: "epic", icon: "fa-user-ninja" },
-            
-            // CONSUMIVEIS
             "p_hp": { name: "Poção de Vida", type: "consumable", class: "all", effect: "heal", val: 50, price: 25, rarity: "common", icon: "fa-flask" }
         };
 
         const MONSTERS_DB = [
-            { name: "Slime Gosmento", hp: 60, dmg: 5, agi: 2, xp: 20, gold: 15, img: "https://media.tenor.com/J3iY_Zq3HAAAAAAj/slime-jump-attack.gif" },
-            { name: "Goblin Batedor", hp: 120, dmg: 10, agi: 10, xp: 40, gold: 30, img: "https://media.tenor.com/f22j10aC8oQAAAAj/goblin-run.gif" },
-            { name: "Orc Guerreiro", hp: 250, dmg: 20, agi: 5, xp: 80, gold: 60, img: "https://media.tenor.com/images/3a9a5570530752494916a4959db1d6a3/tenor.gif" },
-            { name: "Esqueleto", hp: 150, dmg: 15, agi: 8, xp: 50, gold: 40, img: "https://media.tenor.com/M25mH2P1k1kAAAAj/skeleton-idle.gif" },
-            { name: "Dragão Jovem", hp: 500, dmg: 40, agi: 15, xp: 300, gold: 200, img: "https://media.tenor.com/Q28gG7-gC4QAAAAj/dragon-flying.gif" }
+            { name: "Slime Gosmento", hp: 60, dmg: 5, agi: 2, xp: 20, gold: 15, img: "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cG1nOGNjbW11MGVmZHByenpldGZkYWdxOWg4NmVucmRiNHl4Y2V1MyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/qAkRAS7IVW5Wn7GDGr/giphy.gif" },
+            { name: "Goblin Batedor", hp: 120, dmg: 10, agi: 10, xp: 40, gold: 30, img: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2hnazJjenkyODJuOTJieXdreGZhMzZoeTY1NjU1aW0xdWFnczc2MyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/t5VPh9REffgLC/giphy.gif" },
+            { name: "Orc Guerreiro", hp: 250, dmg: 20, agi: 5, xp: 80, gold: 60, img: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMzhzdnJvMmtnYmFqY2NrdHBqeDRsOXAweXE5dDdveWdoYXhpZXdhYyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/7SQUBIgVfTzZFYdfbE/giphy.gif" },
+            { name: "Esqueleto", hp: 150, dmg: 15, agi: 8, xp: 50, gold: 40, img: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjI5dWpiaHRya2lwZTU1YmFscGY4encxbW1mMmdiOWZsbDR4bzQxZyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/HPvelJbchxZaa3vSsM/giphy.gif" },
+            { name: "Dragão Jovem", hp: 500, dmg: 40, agi: 15, xp: 300, gold: 200, img: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGE4N2QyaHBtaHRuaXljaWk1bWZ0bzQ2NzVzbzlrZmEwcmFsdTVodiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/uOAyXaREzn6Noz5yrZ/giphy.gif" }
         ];
 
         let currentUser = null;
@@ -500,7 +474,6 @@
             });
         }
 
-        // --- SISTEMA DE MORTE E COOLDOWN ---
         function checkDeathCooldown() {
             const btn = document.getElementById('btnEnterDungeon');
             const msg = document.getElementById('dungeonStatusMsg');
@@ -518,13 +491,13 @@
                     msg.innerHTML = `<span style="color:#ff5555">Você morreu em combate! Espere ${timeLeft} minutos para reviver.</span>`;
                 } else {
                     const updates = {};
-                    updates[`users/${currentUser.uid}/rpg/deathTimestamp`] = 0;
-                    updates[`users/${currentUser.uid}/rpg/hpCurrent`] = calculatedStats.maxHp; 
-                    update(ref(db), updates);
+                    update(ref(db, `users/${currentUser.uid}/rpg`), { deathTimestamp: 0, hpCurrent: calculatedStats.maxHp });
                 }
             } else {
                 btn.classList.remove('dead');
+                btn.innerHTML = `<i class="fa-solid fa-dungeon"></i> Entrar na Dungeon`;
                 btn.onclick = window.startDungeon;
+                msg.innerHTML = "Derrote monstros para ganhar Ouro e XP Real!";
             }
         }
 
@@ -626,7 +599,11 @@
                 const enemyDmg = Math.floor(currentEnemy.dmg * (0.8 + Math.random() * 0.4));
                 rpgData.hpCurrent -= enemyDmg;
                 if(rpgData.hpCurrent < 0) rpgData.hpCurrent = 0;
-                update(ref(db, `users/${currentUser.uid}/rpg/hpCurrent`), rpgData.hpCurrent);
+                
+                // --- CORREÇÃO DO BUG DO TURNO ---
+                update(ref(db, `users/${currentUser.uid}/rpg`), { hpCurrent: rpgData.hpCurrent });
+                // ---------------------------------
+                
                 renderUI();
                 showFloatingText(enemyDmg, "normal", true); 
                 addLog(`${currentEnemy.name} te acertou! -${enemyDmg} HP`, '#ff5555');
@@ -666,7 +643,7 @@
 
         function handleDefeat() {
             const deathTime = Date.now();
-            update(ref(db, `users/${currentUser.uid}/rpg/deathTimestamp`), deathTime);
+            update(ref(db, `users/${currentUser.uid}/rpg`), { deathTimestamp: deathTime });
             showResultModal("VOCÊ MORREU", 0, 0, battleStats.damageDealt, currentEnemy.name, false, true);
         }
 
@@ -717,27 +694,23 @@
             log.prepend(p);
         };
 
-        // --- LÓGICA DE CLASSE E TROCA ---
         window.openClassSelector = function() {
             document.getElementById('class-selection').style.display = 'flex';
         };
 
         window.chooseClass = function(className) {
             if(confirm(`Tem certeza que deseja mudar para ${CLASSES[className].name}?`)) {
-                // Pega dados atuais para não perder inventário
                 get(ref(db, `users/${currentUser.uid}/rpg`)).then((snapshot) => {
                     const currentData = snapshot.val() || {};
                     let inventory = currentData.inventory || [];
                     let equipped = currentData.equipped || {};
                     
-                    // Se for novo (inventory vazio), dá o kit inicial + Faca de Pão
                     if(inventory.length === 0 && !equipped.weapon) {
-                        inventory.push('w_breadknife'); // Item UNIVERSAL
+                        inventory.push('w_breadknife'); 
                         if(className === 'warrior') inventory.push('w_sword1');
                         if(className === 'mage') inventory.push('w_staff1');
                         if(className === 'rogue') inventory.push('w_dagger1');
                     } else {
-                        // LÓGICA DE TROCA DE CLASSE (UNEQUIP INCOMPATÍVEIS)
                         ['weapon', 'armor'].forEach(slot => {
                             const itemId = equipped[slot];
                             if(itemId) {
