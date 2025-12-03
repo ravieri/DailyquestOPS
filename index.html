@@ -265,11 +265,53 @@
         /* COLUNA 3: QUEST LOG */
         .col-quest-log { background: var(--bg-panel); padding: 25px; display: flex; flex-direction: column; overflow: hidden; height: 100%; transition: background-color 0.3s; }
         .section-title { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: inline-block; padding-bottom: 5px; flex-shrink: 0;}
-        .input-group { display: flex; gap: 5px; margin-bottom: 20px; flex-shrink: 0; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 20px; flex-shrink: 0; position: relative; }
         input[type="text"] { flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 4px; outline: none; transition: 0.2s; }
         input[type="text"]:focus { border-color: var(--primary); }
         .btn-add { background: var(--secondary); color: #000; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.2rem;}
         .btn-add:hover { background: #00ff88; }
+        
+        /* NOVO BOTÃO EMOJI */
+        .btn-emoji { background: var(--bg-element); border: 1px solid var(--border); color: var(--text-secondary); width: 45px; border-radius: 4px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-emoji:hover { background: var(--hover-item); color: var(--gold); }
+        
+        /* PICKER DE EMOJI */
+        .emoji-picker-popup {
+            position: absolute; top: 100%; right: 0; width: 250px; height: 200px;
+            background: var(--bg-dropdown); border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: 0 5px 15px var(--shadow); z-index: 50; padding: 10px;
+            display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; overflow-y: auto; margin-top: 5px;
+        }
+        .emoji-item {
+            cursor: pointer; font-size: 1.2rem; display: flex; justify-content: center; align-items: center;
+            padding: 5px; border-radius: 4px; transition: 0.2s;
+        }
+        .emoji-item:hover { background: var(--hover-item); transform: scale(1.2); }
+
+        /* NOVO: AUTOCOMPLETE DE EMOJI (:) */
+        .emoji-autocomplete {
+            position: absolute; bottom: 100%; left: 0; min-width: 200px; max-height: 200px;
+            background: var(--bg-dropdown); border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: 0 -5px 15px var(--shadow); z-index: 60; display: none; flex-direction: column; overflow-y: auto;
+            margin-bottom: 5px;
+        }
+        .ac-item {
+            padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text);
+            transition: 0.2s;
+        }
+        .ac-item:last-child { border-bottom: none; }
+        .ac-item:hover, .ac-item.selected { background: var(--primary); color: white; }
+        .ac-emoji { font-size: 1.2rem; }
+        .ac-code { font-size: 0.85rem; opacity: 0.8; }
+
+        /* MODAL DE ATUALIZAÇÃO */
+        .update-list { list-style: none; text-align: left; }
+        .update-list li { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .update-list li:last-child { border-bottom: none; }
+        .update-tag { background: var(--secondary); color: black; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 10px; text-transform: uppercase;}
+        .update-desc { margin-top: 5px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.4; }
+
+
         #draft-list { list-style: none; flex: 1; overflow-y: auto; margin-bottom: 20px; min-height: 0; }
         #draft-list li { background: var(--bg-element); padding: 12px; margin-bottom: 8px; display: flex; align-items: center; border-radius: 4px; border: 1px solid transparent; color: var(--text); }
         #draft-list li:hover { border-color: var(--border); }
@@ -380,6 +422,40 @@
         <div class="tooltip-stat"><span>Missões:</span> <span id="ttQuests">0</span></div>
     </div>
 
+    <div class="shop-modal" id="updateModal">
+        <div class="shop-content">
+            <div class="shop-header">
+                <div class="shop-title" style="color: var(--primary);"><i class="fa-solid fa-rocket"></i> Novidades da v1.7</div>
+                <div class="shop-close" id="btnCloseUpdateTop"><i class="fa-solid fa-times"></i></div>
+            </div>
+            <div class="shop-body">
+                <ul class="update-list">
+                    <li>
+                        <div><span class="update-tag">NOVO</span> <span style="font-weight:bold; color: var(--text);">Menu de Emojis</span></div>
+                        <div class="update-desc">
+                            Agora você pode adicionar ícones às suas missões facilmente! Clique no botão <i class="fa-regular fa-face-smile"></i> ao lado do campo de texto para abrir a galeria.
+                        </div>
+                    </li>
+                    <li>
+                        <div><span class="update-tag">NOVO</span> <span style="font-weight:bold; color: var(--text);">Autocompletar Inteligente</span></div>
+                        <div class="update-desc">
+                            Digite <code>:</code> (dois pontos) seguido de um nome (ex: <code>:fogo</code>, <code>:feliz</code>) para buscar um emoji rapidamente enquanto escreve.
+                        </div>
+                    </li>
+                    <li>
+                        <div><span class="update-tag">INFO</span> <span style="font-weight:bold; color: var(--text);">Emojis Gratuitos</span></div>
+                        <div class="update-desc">
+                            Estes novos emojis de texto são totalmente gratuitos e não gastam seu Ouro da loja. Aproveite para deixar seus relatórios mais divertidos!
+                        </div>
+                    </li>
+                </ul>
+                <button class="btn-submit" id="btnCloseUpdate" style="margin-top: 20px;">
+                    <i class="fa-solid fa-check"></i> Entendi, bora pro Daily!
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="shop-modal" id="shopModal">
         <div class="shop-content">
             <div class="shop-header">
@@ -461,12 +537,15 @@
                 </div>
             </div>
 
-            <div class="app-version">v1.4 - Ranking & Títulos</div>
+            <div class="app-version">v1.7 - Patch Notes</div>
         </div>
 
         <div class="col-feed">
             <div class="feed-header">
-                <div><i class="fa-solid fa-globe" style="color: var(--primary);"></i> Chat da Guilda</div>
+                <div>
+                    <i class="fa-solid fa-globe" style="color: var(--primary);"></i> Chat da Guilda
+                    <span id="btnShowUpdate" style="font-size: 0.8rem; margin-left: 10px; cursor: pointer; color: var(--text-secondary); border: 1px solid var(--border); padding: 2px 5px; border-radius: 4px;" title="Ver Novidades"><i class="fa-regular fa-newspaper"></i></span>
+                </div>
                 
                 <div class="header-tools">
                     <div class="tool-btn" id="toggleSearchBtn" title="Pesquisar">
@@ -533,6 +612,15 @@
             
             <div class="input-group">
                 <input type="text" id="taskInput" placeholder="Ex: Finalizei o relatório...">
+                
+                <div class="emoji-autocomplete" id="emojiAutocomplete"></div>
+
+                <button class="btn-emoji" id="btnEmojiTrigger" title="Adicionar Emoji">
+                    <i class="fa-regular fa-face-smile"></i>
+                </button>
+                <div class="emoji-picker-popup" id="emojiPicker">
+                    </div>
+
                 <button class="btn-add" id="btnAddTask"><i class="fa-solid fa-plus"></i></button>
             </div>
 
@@ -602,6 +690,11 @@
         const shiftEndInput = document.getElementById('shiftEnd');
         const btnEditAvatar = document.getElementById('btnEditAvatar');
         
+        // EMOJI ELEMENTS
+        const btnEmojiTrigger = document.getElementById('btnEmojiTrigger');
+        const emojiPicker = document.getElementById('emojiPicker');
+        const emojiAutocomplete = document.getElementById('emojiAutocomplete');
+
         // RESTAURA O HORARIO SALVO
         const savedShiftTime = localStorage.getItem('savedShiftTime');
         if(savedShiftTime) shiftEndInput.value = savedShiftTime;
@@ -640,6 +733,12 @@
         const rankingModal = document.getElementById('rankingModal');
         const btnCloseRanking = document.getElementById('btnCloseRanking');
         const rankingList = document.getElementById('rankingList');
+
+        // Updates Modal (NOVO)
+        const updateModal = document.getElementById('updateModal');
+        const btnCloseUpdate = document.getElementById('btnCloseUpdate');
+        const btnCloseUpdateTop = document.getElementById('btnCloseUpdateTop');
+        const btnShowUpdate = document.getElementById('btnShowUpdate');
 
         // Tooltip & Toasts
         const userTooltip = document.getElementById('userTooltip');
@@ -688,6 +787,94 @@
             { id: 'title_dev', name: 'Título: Senior Dev', type: 'titles', price: 1000, value: 'Senior Dev' },
             { id: 'title_king', name: 'Título: O Rei', type: 'titles', price: 5000, value: 'O Rei' }
         ];
+
+        // ==========================================================
+        // EMOJIS GRATIS & AUTOCOMPLETE
+        // ==========================================================
+        const FREE_EMOJIS = [
+            { char: "😀", name: "feliz" }, { char: "😂", name: "risada" }, { char: "🥰", name: "apaixonado" },
+            { char: "😎", name: "oculos" }, { char: "🤔", name: "pensando" }, { char: "😴", name: "sono" },
+            { char: "😭", name: "choro" }, { char: "😡", name: "raiva" }, { char: "🤯", name: "explosao" },
+            { char: "🥳", name: "festa" }, { char: "👻", name: "fantasma" }, { char: "👽", name: "alien" },
+            { char: "👍", name: "joinha" }, { char: "👎", name: "negativo" }, { char: "👏", name: "palmas" },
+            { char: "🙌", name: "maos" }, { char: "🤝", name: "acordo" }, { char: "🙏", name: "amem" },
+            { char: "🔥", name: "fogo" }, { char: "✨", name: "brilho" }, { char: "🎉", name: "confeite" },
+            { char: "💯", name: "100" }, { char: "✅", name: "check" }, { char: "❌", name: "x" },
+            { char: "🚀", name: "foguete" }, { char: "💻", name: "pc" }, { char: "📱", name: "celular" },
+            { char: "📷", name: "camera" }, { char: "💡", name: "ideia" }, { char: "💰", name: "dinheiro" },
+            { char: "📝", name: "nota" }, { char: "📅", name: "data" }, { char: "🔒", name: "cadeado" },
+            { char: "🔑", name: "chave" }, { char: "❤️", name: "coracao" }, { char: "💔", name: "partido" },
+            { char: "🐛", name: "bug" }, { char: "☕", name: "cafe" }, { char: "🍕", name: "pizza" },
+            { char: "🍔", name: "burger" }, { char: "🍺", name: "cerveja" }, { char: "⚽", name: "futebol" }
+        ];
+
+        // Inicializa o Picker (Janela Flutuante)
+        FREE_EMOJIS.forEach(obj => {
+            const span = document.createElement('div');
+            span.className = 'emoji-item';
+            span.innerText = obj.char;
+            span.title = ":" + obj.name;
+            span.onclick = () => {
+                taskInput.value += obj.char;
+                emojiPicker.style.display = 'none';
+                taskInput.focus();
+            };
+            emojiPicker.appendChild(span);
+        });
+
+        // Toggle Emoji Picker Button
+        btnEmojiTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = emojiPicker.style.display === 'grid';
+            emojiPicker.style.display = isVisible ? 'none' : 'grid';
+        });
+
+        // LÓGICA DE AUTOCOMPLETE DO INPUT
+        taskInput.addEventListener('keyup', (e) => {
+            const val = taskInput.value;
+            const cursorPosition = taskInput.selectionStart;
+            
+            // Procura por um padrão :algumacoisa logo antes do cursor
+            const textBeforeCursor = val.substring(0, cursorPosition);
+            const match = textBeforeCursor.match(/:([a-z0-9]*)$/i);
+
+            if (match) {
+                const query = match[1].toLowerCase();
+                // Filtra emojis que contenham o termo digitado
+                const matches = FREE_EMOJIS.filter(e => e.name.includes(query));
+
+                if (matches.length > 0) {
+                    renderAutocomplete(matches, match.index, query);
+                } else {
+                    emojiAutocomplete.style.display = 'none';
+                }
+            } else {
+                emojiAutocomplete.style.display = 'none';
+            }
+        });
+
+        function renderAutocomplete(list, startIndex, query) {
+            emojiAutocomplete.innerHTML = '';
+            emojiAutocomplete.style.display = 'flex';
+            
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'ac-item';
+                div.innerHTML = `<span class="ac-emoji">${item.char}</span> <span class="ac-code">:${item.name}</span>`;
+                
+                div.onclick = () => {
+                    const currentVal = taskInput.value;
+                    const before = currentVal.substring(0, startIndex);
+                    const cursor = taskInput.selectionStart;
+                    const after = currentVal.substring(cursor);
+                    
+                    taskInput.value = before + item.char + " " + after;
+                    emojiAutocomplete.style.display = 'none';
+                    taskInput.focus();
+                };
+                emojiAutocomplete.appendChild(div);
+            });
+        }
 
         // ==========================================================
         // SISTEMA DE TEMA (DARK/LIGHT)
@@ -749,7 +936,35 @@
         window.onclick = (e) => {
             if (!notificationBtn.contains(e.target)) notificationDropdown.style.display = 'none';
             if (!settingsBtn.contains(e.target)) settingsDropdown.style.display = 'none';
+            if (!btnEmojiTrigger.contains(e.target) && !emojiPicker.contains(e.target)) emojiPicker.style.display = 'none';
+            // Fecha autocomplete se clicar fora
+            if (!emojiAutocomplete.contains(e.target) && e.target !== taskInput) emojiAutocomplete.style.display = 'none';
         };
+
+        // ==========================================================
+        // SISTEMA DE UPDATE MODAL (NOVO)
+        // ==========================================================
+        const CURRENT_VERSION = '1.7';
+        
+        // Verifica se a versão salva é diferente da atual
+        const savedVersion = localStorage.getItem('appVersion');
+        if (savedVersion !== CURRENT_VERSION) {
+            setTimeout(() => {
+                updateModal.style.display = 'flex';
+            }, 1000); // Espera 1s para não ser agressivo no loading
+        }
+
+        const closeUpdateLogic = () => {
+            updateModal.style.display = 'none';
+            localStorage.setItem('appVersion', CURRENT_VERSION);
+        };
+
+        btnCloseUpdate.addEventListener('click', closeUpdateLogic);
+        btnCloseUpdateTop.addEventListener('click', closeUpdateLogic);
+        
+        btnShowUpdate.addEventListener('click', () => {
+            updateModal.style.display = 'flex';
+        });
 
         // ==========================================================
         // SISTEMA DA LOJA
