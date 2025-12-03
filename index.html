@@ -118,7 +118,7 @@
             margin-top: auto; font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5; padding-top: 20px; width: 100%; text-align: center;
         }
 
-        /* ESTILOS DE BORDAS EFEITOS */
+        /* ESTILOS DE BORDAS EFEITOS (ATUALIZADO COM ANIMAÇÕES) */
         .chat-avatar-wrapper {
             position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; z-index: 1;
         }
@@ -131,19 +131,36 @@
         }
         .card-user:hover .border-overlay { opacity: 1; }
 
+        /* DEFINIÇÃO DAS ANIMAÇÕES */
+        @keyframes rainbow-cycle { 0% { border-color: red; box-shadow: 0 0 10px red; } 15% { border-color: orange; } 30% { border-color: yellow; } 45% { border-color: green; } 60% { border-color: blue; } 75% { border-color: indigo; } 90% { border-color: violet; } 100% { border-color: red; box-shadow: 0 0 10px red; } }
+        @keyframes neon-pulse { 0% { border-color: #0ff; box-shadow: 0 0 5px #0ff, 0 0 10px #0ff inset; } 50% { border-color: #fff; box-shadow: 0 0 20px #0ff, 0 0 15px #0ff inset; } 100% { border-color: #0ff; box-shadow: 0 0 5px #0ff, 0 0 10px #0ff inset; } }
+        @keyframes plasma-flow { 0% { border-color: #ff00cc; box-shadow: 0 0 10px #ff00cc; } 33% { border-color: #ffcc00; box-shadow: 0 0 15px #ffcc00; } 66% { border-color: #3300ff; box-shadow: 0 0 10px #3300ff; } 100% { border-color: #ff00cc; box-shadow: 0 0 10px #ff00cc; } }
+        @keyframes matrix-glitch { 0% { border-color: #0f0; } 49% { border-color: #0f0; } 50% { border-color: #000; } 51% { border-color: #0f0; } 100% { border-color: #0f0; } }
+        @keyframes nebula-breathe { 0% { border-color: #4b0082; box-shadow: 0 0 10px #4b0082; } 50% { border-color: #8a2be2; box-shadow: 0 0 25px #8a2be2; } 100% { border-color: #4b0082; box-shadow: 0 0 10px #4b0082; } }
+
         .border-default { border: 2px solid var(--primary); }
         .border-gold { border: 3px solid #ffd700; box-shadow: 0 0 10px #ffd700; }
         .border-fire { border: 3px solid #ff5555; box-shadow: 0 0 10px #ff5555; }
         .border-ice { border: 3px solid #00ffff; box-shadow: 0 0 10px #00ffff; }
-        .border-rainbow { background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet); box-shadow: 0 0 15px rgba(255,255,255,0.4); }
-
-        .profile-border-rainbow {
-            border: 4px solid transparent; 
-            background: linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) border-box;
-        }
+        
         .profile-border-gold { border-color: #ffd700 !important; box-shadow: 0 0 20px #ffd700; }
         .profile-border-fire { border-color: #ff5555 !important; box-shadow: 0 0 20px #ff5555; }
         .profile-border-ice { border-color: #00ffff !important; box-shadow: 0 0 20px #00ffff; }
+
+        /* BORDAS ANIMADAS (CLASSES) */
+        .profile-border-rainbow { animation: rainbow-cycle 3s linear infinite; border-width: 4px; border-style: solid; }
+        .profile-border-neon { animation: neon-pulse 1.5s ease-in-out infinite; border-width: 4px; border-style: solid; }
+        .profile-border-plasma { animation: plasma-flow 4s ease infinite; border-width: 4px; border-style: solid; }
+        .profile-border-matrix { animation: matrix-glitch 0.2s steps(2) infinite; border-width: 4px; border-style: solid; border-color: #0f0; box-shadow: 0 0 5px #0f0; }
+        .profile-border-nebula { animation: nebula-breathe 3s ease-in-out infinite; border-width: 4px; border-style: solid; }
+        
+        /* Ajuste para as bordas pequenas no chat */
+        .border-rainbow { animation: rainbow-cycle 3s linear infinite; border: 2px solid red; }
+        .border-neon { animation: neon-pulse 1.5s ease-in-out infinite; border: 2px solid #0ff; }
+        .border-plasma { animation: plasma-flow 4s ease infinite; border: 2px solid #ff00cc; }
+        .border-matrix { animation: matrix-glitch 0.2s steps(2) infinite; border: 2px solid #0f0; }
+        .border-nebula { animation: nebula-breathe 3s ease-in-out infinite; border: 2px solid #4b0082; }
+
 
         .user-title { color: var(--secondary); font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
         .xp-bar-container { width: 100%; height: 15px; background: #000; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid var(--border);}
@@ -425,32 +442,32 @@
     <div class="shop-modal" id="updateModal">
         <div class="shop-content">
             <div class="shop-header">
-                <div class="shop-title" style="color: var(--primary);"><i class="fa-solid fa-rocket"></i> Novidades da v1.7</div>
+                <div class="shop-title" style="color: var(--primary);"><i class="fa-solid fa-dragon"></i> Novidades da v2.0</div>
                 <div class="shop-close" id="btnCloseUpdateTop"><i class="fa-solid fa-times"></i></div>
             </div>
             <div class="shop-body">
                 <ul class="update-list">
                     <li>
-                        <div><span class="update-tag">NOVO</span> <span style="font-weight:bold; color: var(--text);">Menu de Emojis</span></div>
+                        <div><span class="update-tag" style="background: #ff5555; color: white;">ARENA</span> <span style="font-weight:bold; color: var(--text);">O Campo de Batalha Abriu!</span></div>
                         <div class="update-desc">
-                            Agora você pode adicionar ícones às suas missões facilmente! Clique no botão <i class="fa-regular fa-face-smile"></i> ao lado do campo de texto para abrir a galeria.
+                            Clique no ícone de espada <i class="fa-solid fa-khanda" style="color:#ff5555"></i> no menu superior para entrar na Arena. Enfrente monstros, ganhe <b>Ouro e XP reais</b> para seu perfil e suba de nível lutando!
                         </div>
                     </li>
                     <li>
-                        <div><span class="update-tag">NOVO</span> <span style="font-weight:bold; color: var(--text);">Autocompletar Inteligente</span></div>
+                        <div><span class="update-tag">RPG</span> <span style="font-weight:bold; color: var(--text);">Classes e Itens</span></div>
                         <div class="update-desc">
-                            Digite <code>:</code> (dois pontos) seguido de um nome (ex: <code>:fogo</code>, <code>:feliz</code>) para buscar um emoji rapidamente enquanto escreve.
+                            Escolha seu caminho: <b>Guerreiro</b>, <b>Mago</b> ou <b>Ladino</b>. Compre equipamentos exclusivos no mercado e troque itens com outros jogadores.
                         </div>
                     </li>
                     <li>
-                        <div><span class="update-tag">INFO</span> <span style="font-weight:bold; color: var(--text);">Emojis Gratuitos</span></div>
+                        <div><span class="update-tag" style="background: #000; border: 1px solid #555; color: #fff;">HARDCORE</span> <span style="font-weight:bold; color: var(--text);">Cuidado com a Morte</span></div>
                         <div class="update-desc">
-                            Estes novos emojis de texto são totalmente gratuitos e não gastam seu Ouro da loja. Aproveite para deixar seus relatórios mais divertidos!
+                            A vida na Arena é real. Se sua vida chegar a 0, você ficará <b>bloqueado por 1 hora</b> até reviver. Use poções!
                         </div>
                     </li>
                 </ul>
                 <button class="btn-submit" id="btnCloseUpdate" style="margin-top: 20px;">
-                    <i class="fa-solid fa-check"></i> Entendi, bora pro Daily!
+                    <i class="fa-solid fa-check"></i> Entendi, bora pro combate!
                 </button>
             </div>
         </div>
@@ -537,7 +554,7 @@
                 </div>
             </div>
 
-            <div class="app-version">v1.7 - Patch Notes</div>
+            <div class="app-version">v2.0 - Arena Expansion</div>
         </div>
 
         <div class="col-feed">
@@ -548,6 +565,9 @@
                 </div>
                 
                 <div class="header-tools">
+                    <a href="arena.html" target="_blank" class="tool-btn" style="color: #ff5555;" title="Ir para o Campo de Batalha">
+    <i class="fa-solid fa-khanda"></i>
+</a>
                     <div class="tool-btn" id="toggleSearchBtn" title="Pesquisar">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
@@ -776,11 +796,17 @@
             { id: 'icon_poo', name: 'Emoji Poo', type: 'icons', price: 200, value: 'fa-poo' },
             { id: 'icon_ghost', name: 'Fantasma', type: 'icons', price: 300, value: 'fa-ghost' },
             
-            // BORDAS
+            // BORDAS (ESTÁTICAS)
             { id: 'border_gold', name: 'Borda Dourada', type: 'borders', price: 500, value: 'border-gold' },
             { id: 'border_fire', name: 'Borda de Fogo', type: 'borders', price: 800, value: 'border-fire' },
             { id: 'border_ice', name: 'Borda de Gelo', type: 'borders', price: 800, value: 'border-ice' },
-            { id: 'border_rainbow', name: 'RGB Gamer', type: 'borders', price: 2000, value: 'border-rainbow' },
+            { id: 'border_rainbow', name: 'Rainbow', type: 'borders', price: 2000, value: 'border-rainbow' },
+
+            // BORDAS (ANIMADAS - NOVAS)
+            { id: 'border_neon', name: 'Neon Cyber', type: 'borders', price: 1500, value: 'border-neon' },
+            { id: 'border_plasma', name: 'Plasma Solar', type: 'borders', price: 2500, value: 'border-plasma' },
+            { id: 'border_matrix', name: 'Matrix Code', type: 'borders', price: 2000, value: 'border-matrix' },
+            { id: 'border_nebula', name: 'Nebulosa', type: 'borders', price: 3000, value: 'border-nebula' },
 
             // TÍTULOS (Premium)
             { id: 'title_boss', name: 'Título: Big Boss', type: 'titles', price: 1000, value: 'Big Boss' },
@@ -944,7 +970,7 @@
         // ==========================================================
         // SISTEMA DE UPDATE MODAL (NOVO)
         // ==========================================================
-        const CURRENT_VERSION = '1.7';
+        const CURRENT_VERSION = '2.0';
         
         // Verifica se a versão salva é diferente da atual
         const savedVersion = localStorage.getItem('appVersion');
@@ -1824,6 +1850,7 @@
                     currentUserLevel = data.level || 1;
 
                     if(equippedItems.border) {
+                        // Aplica a classe da borda (incluindo as animadas)
                         document.getElementById('profileAvatarFrame').className = 'avatar-frame profile-' + equippedItems.border;
                     }
                     updateUIStats(data.xp || 0, data.level || 1, data.questsCompleted || 0);

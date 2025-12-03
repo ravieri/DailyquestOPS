@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena - Battle & Trade</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0d0d0f;
+            --bg-panel: #1a1a1d;
+            --bg-slot: #2a2a30;
+            --primary: #ff5555; /* Dano Físico */
+            --magic: #8257e6;   /* Dano Mágico */
+            --rogue: #04d361;   /* Agilidade/Critico */
+            --gold: #ffd700;
+            --text: #e1e1e6;
+            --text-secondary: #a8a8b3;
+            --border: #323238;
+            --rare: #0070dd;
+            --epic: #a335ee;
+            --legendary: #ff8000;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg-dark); color: var(--text); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; transition: 0.1s; }
+
+        /* ANIMAÇÃO DE DANO (SCREEN SHAKE) */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .screen-shake {
+            animation: shake 0.5s;
+            box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.5);
+        }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .btn-login {
+            background: var(--primary); color: white; padding: 15px 30px; 
+            border: none; border-radius: 5px; font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase;
+        }
+        .btn-login:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--primary); }
+
+        /* LAYOUT DO JOGO */
+        #game-container { display: none; height: 100%; display: grid; grid-template-rows: 60px 1fr; }
+        
+        header {
+            background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 20px;
+            display: flex; align-items: center; justify-content: space-between; z-index: 20;
+        }
+        .gold-display { color: var(--gold); font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+
+        /* GRID PRINCIPAL */
+        .main-grid {
+            display: grid; grid-template-columns: 300px 1fr 350px; height: 100%; overflow: hidden;
+        }
+
+        /* COLUNA ESQUERDA: PERSONAGEM */
+        .col-char { background: var(--bg-panel); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        
+        .char-card { width: 100%; text-align: center; position: relative; }
+        .char-avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--border); object-fit: cover; margin-bottom: 5px; background: #000; }
+        .class-badge { padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; display: inline-block; margin-top: 5px;}
+        
+        .btn-change-class {
+            background: #333; color: #ccc; border: 1px solid #555; padding: 5px 10px; 
+            border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 5px; transition: 0.2s;
+        }
+        .btn-change-class:hover { background: var(--text); color: black; }
+
+        .stats-box { width: 100%; background: var(--bg-slot); padding: 15px; border-radius: 8px; font-size: 0.9rem; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
+        .stat-row:last-child { border: none; margin: 0; }
+        .stat-val { font-weight: bold; color: var(--text); }
+        
+        /* BARRA DE VIDA DO PLAYER */
+        .player-hp-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-top: 5px; border: 1px solid #555; }
+        .player-hp-fill { height: 100%; background: #ff5555; width: 100%; transition: width 0.3s; }
+
+        /* EQUIPAMENTOS */
+        .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
+        .equip-slot {
+            background: var(--bg-dark); border: 2px dashed var(--border); height: 60px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; transition: 0.2s;
+        }
+        .equip-slot:hover { border-color: var(--text-secondary); }
+        .equip-slot.filled { border-style: solid; border-color: var(--primary); background: var(--bg-slot); }
+        .equip-slot i { font-size: 1.5rem; color: var(--border); }
+        .equip-slot img { width: 40px; height: 40px; }
+
+        /* COLUNA CENTRO: COMBATE */
+        .col-battle { 
+            position: relative; 
+            background: url('https://i.pinimg.com/originals/2c/83/92/2c8392f447f526eb6d341904791e8470.gif') no-repeat center center; 
+            background-size: cover; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+        }
+        .battle-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.3)); z-index: 1; }
+        .battle-stage { position: relative; z-index: 10; width: 80%; height: 90%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding-top: 20px;}
+        
+        .enemy-container { text-align: center; animation: float 3s ease-in-out infinite; position: relative; display: none; }
+        .enemy-sprite { height: 200px; filter: drop-shadow(0 0 15px rgba(255,0,0,0.5)); transition: 0.1s; }
+        .enemy-hit { filter: brightness(5) sepia(1) hue-rotate(-50deg) saturate(5); transform: scale(0.9); }
+        
+        .hp-bar-container { width: 300px; height: 25px; background: #222; border: 2px solid #555; border-radius: 15px; overflow: hidden; margin: 10px auto; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff5555, #ff2222); width: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hp-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; text-shadow: 1px 1px 2px black; color: white; z-index: 2;}
+
+        .battle-actions { display: none; gap: 15px; margin-bottom: 30px; }
+        .btn-action { padding: 15px 40px; background: var(--bg-panel); border: 2px solid var(--text); color: var(--text); font-weight: bold; cursor: pointer; font-size: 1.1rem; border-radius: 8px; transition: 0.1s; text-transform: uppercase; box-shadow: 0 5px 0 #000; }
+        .btn-action:active { transform: translateY(5px); box-shadow: none; }
+        .btn-action:hover { filter: brightness(1.2); }
+        .btn-action.attack { border-color: var(--primary); background: #3a1515; }
+        .btn-action.potion { border-color: var(--rogue); background: #0f2e1b; }
+        .btn-action.disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; pointer-events: none; }
+
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+        @keyframes damageFloat { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+
+        .dmg-number { position: absolute; font-weight: bold; font-size: 2rem; color: #fff; animation: damageFloat 0.8s ease-out forwards; pointer-events: none; text-shadow: 2px 2px 0 #000; z-index: 100; }
+        .dmg-crit { color: #ffd700; font-size: 3rem; }
+        .dmg-miss { color: #aaa; font-size: 1.5rem; }
+        .dmg-player { color: #ff5555; font-size: 2.5rem; text-shadow: 0 0 10px red; }
+
+        /* TELA DE START DUNGEON */
+        #dungeon-start {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .btn-start-dungeon {
+            background: linear-gradient(45deg, #3a1515, #ff5555); color: white;
+            padding: 20px 50px; font-size: 1.5rem; font-weight: bold;
+            border: 2px solid #fff; border-radius: 10px; cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 85, 85, 0.5); text-transform: uppercase;
+            transition: 0.3s; animation: pulse 2s infinite;
+        }
+        .btn-start-dungeon:hover { transform: scale(1.1); box-shadow: 0 0 50px rgba(255, 85, 85, 0.8); }
+        .btn-start-dungeon.dead { background: #333; animation: none; cursor: not-allowed; box-shadow: none; border-color: #555; color: #777; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 85, 85, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 85, 85, 0); } }
+
+        /* MODAL DE VITÓRIA/DERROTA */
+        #result-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30;
+            background: rgba(0,0,0,0.8); display: none; 
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .result-content {
+            background: var(--bg-panel); border: 2px solid var(--gold); border-radius: 10px;
+            padding: 30px; text-align: center; width: 400px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+            position: relative; overflow: hidden;
+        }
+        .result-content.defeat { border-color: #ff5555; box-shadow: 0 0 50px rgba(255, 0, 0, 0.3); }
+        
+        .result-title { font-size: 2.5rem; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-bottom: 20px; text-shadow: 0 0 10px orange; }
+        .result-stat { font-size: 1.2rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
+        .loot-row { display: flex; justify-content: center; gap: 20px; margin: 20px 0; font-weight: bold; font-size: 1.3rem; }
+        .levelup-tag { background: var(--secondary); color: black; font-weight: bold; padding: 5px 10px; border-radius: 4px; animation: bounce 1s infinite; display: none; margin-bottom: 10px;}
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* LOG DE BATALHA */
+        #battleLog { 
+            height: 150px; width: 100%; background: rgba(0,0,0,0.6); 
+            overflow-y: auto; padding: 15px; font-size: 0.9rem; 
+            border: 1px solid #444; border-radius: 8px; margin-bottom: 20px;
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .log-entry { padding-left: 10px; border-left: 3px solid #555; }
+
+        /* COLUNA DIREITA: INVENTÁRIO & LOJA */
+        .col-inventory { background: var(--bg-panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .tab-btn { flex: 1; padding: 15px; background: var(--bg-panel); border: none; color: var(--text-secondary); cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--text); border-bottom-color: var(--primary); background: var(--bg-slot); }
+        
+        .tab-content { padding: 15px; overflow-y: auto; flex: 1; display: none; }
+        .tab-content.active { display: block; }
+
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; }
+        .inv-item { 
+            width: 60px; height: 60px; background: var(--bg-slot); border: 1px solid var(--border); border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative;
+        }
+        .inv-item:hover { border-color: var(--text); background: #333; }
+        .inv-item i { font-size: 1.5rem; color: var(--text-secondary); }
+        .item-qty { position: absolute; bottom: 2px; right: 4px; font-size: 0.7rem; font-weight: bold; }
+
+        .shop-list { display: flex; flex-direction: column; gap: 10px; }
+        .shop-item { display: flex; align-items: center; background: var(--bg-slot); padding: 10px; border-radius: 5px; gap: 10px; border: 1px solid var(--border); }
+        .shop-item img { width: 40px; height: 40px; }
+        .shop-info { flex: 1; }
+        .shop-price { color: var(--gold); font-weight: bold; font-size: 0.9rem; }
+        .btn-buy { background: var(--gold); color: black; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* SELEÇÃO DE CLASSE */
+        #class-selection { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-dark); z-index: 1000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+        .class-options { display: flex; gap: 20px; }
+        .class-card { 
+            width: 200px; padding: 20px; background: var(--bg-panel); border: 2px solid var(--border); border-radius: 10px; 
+            text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .class-card:hover { transform: translateY(-10px); border-color: var(--primary); }
+        .class-card h3 { margin-bottom: 10px; }
+        .class-warrior:hover { border-color: #ff5555; box-shadow: 0 0 20px rgba(255, 85, 85, 0.3); }
+        .class-mage:hover { border-color: #8257e6; box-shadow: 0 0 20px rgba(130, 87, 230, 0.3); }
+        .class-rogue:hover { border-color: #04d361; box-shadow: 0 0 20px rgba(4, 211, 97, 0.3); }
+
+        /* ITEM TOOLTIP */
+        .item-tooltip {
+            position: absolute; background: #000; border: 1px solid #555; padding: 10px; border-radius: 5px;
+            color: #fff; font-size: 0.8rem; pointer-events: none; z-index: 5000; display: none; width: 200px;
+        }
+        .tt-name { font-weight: bold; margin-bottom: 5px; color: var(--text); }
+        .tt-rare { color: var(--rare); }
+        .tt-epic { color: var(--epic); }
+        .tt-legendary { color: var(--legendary); }
+        .tt-desc { color: #aaa; margin-bottom: 5px; font-style: italic;}
+        .tt-stats { color: #fff; border-top: 1px solid #333; padding-top: 5px; }
+
+        .class-w { color: var(--primary); }
+        .class-m { color: var(--magic); }
+        .class-r { color: var(--rogue); }
+
+    </style>
+</head>
+<body>
+
+    <div id="tooltip" class="item-tooltip"></div>
+
+    <div id="login-screen">
+        <h1 style="color: var(--primary); margin-bottom: 20px; font-size: 3rem; text-shadow: 0 0 15px red;">ARENA DE BATALHA</h1>
+        <button class="btn-login" id="btnLogin"><i class="fa-brands fa-google"></i> Conectar Guerreiro</button>
+        <p style="margin-top: 10px; color: #666;">Use a mesma conta do Daily Quest</p>
+    </div>
+
+    <div id="class-selection">
+        <h1>Escolha seu Destino</h1>
+        <div class="class-options">
+            <div class="class-card class-warrior" onclick="window.chooseClass('warrior')">
+                <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: #ff5555; margin-bottom: 10px;"></i>
+                <h3>Guerreiro</h3>
+                <p style="font-size: 0.9rem; color: #999;">Forte e Resistente.<br>Usa Espadas e Escudos.<br>Atributo: FORÇA</p>
+            </div>
+            <div class="class-card class-mage" onclick="window.chooseClass('mage')">
+                <i class="fa-solid fa-hat-wizard" style="font-size: 3rem; color: #8257e6; margin-bottom: 10px;"></i>
+                <h3>Mago</h3>
+                <p style="font-size: 0.9rem; color: #999;">Poderoso e Místico.<br>Usa Cajados e Livros.<br>Atributo: INTELIGÊNCIA</p>
+            </div>
+            <div class="class-card class-rogue" onclick="window.chooseClass('rogue')">
+                <i class="fa-solid fa-mask" style="font-size: 3rem; color: #04d361; margin-bottom: 10px;"></i>
+                <h3>Ladino</h3>
+                <p style="font-size: 0.9rem; color: #999;">Rápido e Letal.<br>Usa Adagas e Arcos.<br>Atributo: AGILIDADE</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" style="display:none;">
+        <header>
+            <div style="font-weight: bold; font-size: 1.2rem; display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid fa-dragon" style="color: var(--primary);"></i> 
+                ARENA
+                <span id="headerLevelBadge" style="font-size: 0.8rem; background: #333; padding: 2px 8px; border-radius: 4px; margin-left: 10px;">Nvl 1</span>
+            </div>
+            <div style="display:flex; gap: 20px;">
+                <div class="gold-display"><span id="goldDisplay">0</span> <i class="fa-solid fa-coins"></i></div>
+                <div style="cursor:pointer;" title="Sair" onclick="window.location.reload()"><i class="fa-solid fa-sign-out-alt"></i></div>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <div class="col-char">
+                <div class="char-card">
+                    <img id="charAvatar" src="" class="char-avatar">
+                    <h2 id="charName">Guerreiro</h2>
+                    <span class="class-badge" id="charClassBadge" style="background: var(--primary);">Classe</span>
+                    <button class="btn-change-class" onclick="window.openClassSelector()">
+                        <i class="fa-solid fa-rotate"></i> Trocar
+                    </button>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stat-row">
+                        <span>Vida (HP)</span> 
+                        <span class="stat-val" id="statHP">100/100</span>
+                    </div>
+                    <div class="player-hp-bar">
+                        <div class="player-hp-fill" id="playerHpBar"></div>
+                    </div>
+                    <div class="stat-row" style="margin-top:10px;"><span>Mana (MP)</span> <span class="stat-val" id="statMP">50/50</span></div>
+                    <div class="stat-row" style="margin-top:10px; color:#ff5555"><span>FOR (Dano)</span> <span class="stat-val" id="statSTR">10</span></div>
+                    <div class="stat-row" style="color:#8257e6"><span>INT (Magia)</span> <span class="stat-val" id="statINT">5</span></div>
+                    <div class="stat-row" style="color:#04d361"><span>AGI (Crítico)</span> <span class="stat-val" id="statAGI">5</span></div>
+                </div>
+
+                <div style="width:100%; text-align:left; font-size:0.9rem; margin-top:10px;">Equipamentos:</div>
+                <div class="equip-grid">
+                    <div class="equip-slot" id="slot-weapon" onclick="window.unequipItem('weapon')">
+                        <i class="fa-solid fa-khanda"></i>
+                    </div>
+                    <div class="equip-slot" id="slot-armor" onclick="window.unequipItem('armor')">
+                        <i class="fa-solid fa-shield-cat"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-battle">
+                <div class="battle-overlay"></div>
+                
+                <div id="dungeon-start">
+                    <button id="btnEnterDungeon" class="btn-start-dungeon" onclick="window.startDungeon()">
+                        <i class="fa-solid fa-dungeon"></i> Entrar na Dungeon
+                    </button>
+                    <p id="dungeonStatusMsg" style="margin-top: 15px; color: #aaa; text-shadow: 1px 1px 2px black;">Derrote monstros para ganhar Ouro e XP Real!</p>
+                </div>
+
+                <div id="result-modal">
+                    <div class="result-content" id="resultContent">
+                        </div>
+                </div>
+
+                <div class="battle-stage" id="battleStage" style="opacity: 0; pointer-events: none; transition: opacity 0.5s;">
+                    <div class="enemy-container" id="enemyContainer">
+                        <div style="margin-bottom: 5px; font-weight: bold; color: #ccc;" id="enemyName">Procurando...</div>
+                        
+                        <div class="hp-bar-container">
+                            <div class="hp-bar-fill" id="enemyHpBar" style="width: 100%;"></div>
+                            <div class="hp-text" id="enemyHpText">100/100</div>
+                        </div>
+                        
+                        <img id="enemyImage" src="" class="enemy-sprite">
+                    </div>
+
+                    <div id="battleLog">
+                        <div style="color: #aaa; font-style: italic; text-align: center;">Prepare-se para lutar...</div>
+                    </div>
+
+                    <div class="battle-actions" id="battleActions">
+                        <button class="btn-action attack" id="btnAttack" onclick="window.attackMonster()">
+                            <i class="fa-solid fa-khanda"></i> ATACAR
+                        </button>
+                        <button class="btn-action potion" id="btnPotion" onclick="window.usePotion()">
+                            <i class="fa-solid fa-flask"></i> CURAR
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-inventory">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="window.switchTab('inv')">Mochila</button>
+                    <button class="tab-btn" onclick="window.switchTab('shop')">Mercado</button>
+                </div>
+
+                <div id="tab-inv" class="tab-content active">
+                    <div class="inv-grid" id="inventoryGrid"></div>
+                </div>
+
+                <div id="tab-shop" class="tab-content">
+                    <div style="margin-bottom:10px; font-size:0.8rem; color:#888;">Gaste seu Ouro do Daily aqui!</div>
+                    <div class="shop-list" id="shopList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, update, onValue, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIGURAÇÃO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOX9F98z780iU37DaaRtG0-htJf0ke0hs",
+            authDomain: "daily-quest-51660.firebaseapp.com",
+            projectId: "daily-quest-51660",
+            storageBucket: "daily-quest-51660.firebasestorage.app",
+            messagingSenderId: "43832156698",
+            appId: "1:43832156698:web:487715036d2827046e67a3",
+            measurementId: "G-VXXBYW186J",
+            databaseURL: "https://daily-quest-51660-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        const CLASSES = {
+            warrior: { name: "Guerreiro", hpMod: 1.5, str: 10, int: 2, agi: 3, color: "#ff5555" },
+            mage: { name: "Mago", hpMod: 0.8, str: 2, int: 12, agi: 4, color: "#8257e6" },
+            rogue: { name: "Ladino", hpMod: 1.0, str: 5, int: 4, agi: 10, color: "#04d361" }
+        };
+
+        // --- DATABASE DE ITENS EXPANDIDO ---
+        const ITEMS_DB = {
+            // ARMAS UNIVERSAIS
+            "w_breadknife": { name: "Faca de Pão", type: "weapon", class: "all", str: 2, int: 0, agi: 1, price: 10, rarity: "common", icon: "fa-utensils" },
+            
+            // GUERREIRO
+            "w_sword1": { name: "Espada Velha", type: "weapon", class: "warrior", str: 5, int: 0, agi: 0, price: 100, rarity: "common", icon: "fa-khanda" },
+            "w_sword2": { name: "Lâmina de Aço", type: "weapon", class: "warrior", str: 15, int: 0, agi: 2, price: 500, rarity: "rare", icon: "fa-khanda" },
+            "w_sword3": { name: "Matadora de Dragões", type: "weapon", class: "warrior", str: 40, int: 5, agi: 5, price: 2000, rarity: "epic", icon: "fa-dragon" },
+            "a_plate": { name: "Peitoral de Ferro", type: "armor", class: "warrior", hp: 100, price: 400, rarity: "rare", icon: "fa-shield-cat" },
+            "a_heavy": { name: "Armadura de Mithril", type: "armor", class: "warrior", hp: 300, price: 2500, rarity: "epic", icon: "fa-shield-halved" },
+
+            // MAGO
+            "w_staff1": { name: "Galho Mágico", type: "weapon", class: "mage", str: 1, int: 6, agi: 0, price: 100, rarity: "common", icon: "fa-wand-magic-sparkles" },
+            "w_staff2": { name: "Cajado Arcano", type: "weapon", class: "mage", str: 2, int: 18, agi: 1, price: 600, rarity: "rare", icon: "fa-wand-sparkles" },
+            "w_staff3": { name: "Cajado do Vazio", type: "weapon", class: "mage", str: 5, int: 45, agi: 5, price: 2200, rarity: "epic", icon: "fa-meteor" },
+            "a_robe": { name: "Manto do Aprendiz", type: "armor", class: "mage", hp: 50, int: 5, price: 300, rarity: "common", icon: "fa-user-graduate" },
+            "a_robe2": { name: "Manto Arquimago", type: "armor", class: "mage", hp: 150, int: 20, price: 2000, rarity: "epic", icon: "fa-hat-wizard" },
+
+            // LADINO
+            "w_dagger1": { name: "Adaga Simples", type: "weapon", class: "rogue", str: 3, int: 0, agi: 4, price: 100, rarity: "common", icon: "fa-bolt" },
+            "w_dagger2": { name: "Lâmina Sombria", type: "weapon", class: "rogue", str: 5, int: 0, agi: 12, price: 550, rarity: "rare", icon: "fa-skull" },
+            "w_dagger3": { name: "Fantasma Noturno", type: "weapon", class: "rogue", str: 10, int: 0, agi: 35, price: 2100, rarity: "epic", icon: "fa-ghost" },
+            "a_light": { name: "Colete de Couro", type: "armor", class: "rogue", hp: 80, agi: 5, price: 350, rarity: "common", icon: "fa-vest" },
+            "a_light2": { name: "Traje Ninja", type: "armor", class: "rogue", hp: 180, agi: 25, price: 2100, rarity: "epic", icon: "fa-user-ninja" },
+            
+            // CONSUMIVEIS
+            "p_hp": { name: "Poção de Vida", type: "consumable", class: "all", effect: "heal", val: 50, price: 25, rarity: "common", icon: "fa-flask" }
+        };
+
+        const MONSTERS_DB = [
+            { name: "Slime Gosmento", hp: 60, dmg: 5, agi: 2, xp: 20, gold: 15, img: "https://media.tenor.com/J3iY_Zq3HAAAAAAj/slime-jump-attack.gif" },
+            { name: "Goblin Batedor", hp: 120, dmg: 10, agi: 10, xp: 40, gold: 30, img: "https://media.tenor.com/f22j10aC8oQAAAAj/goblin-run.gif" },
+            { name: "Orc Guerreiro", hp: 250, dmg: 20, agi: 5, xp: 80, gold: 60, img: "https://media.tenor.com/images/3a9a5570530752494916a4959db1d6a3/tenor.gif" },
+            { name: "Esqueleto", hp: 150, dmg: 15, agi: 8, xp: 50, gold: 40, img: "https://media.tenor.com/M25mH2P1k1kAAAAj/skeleton-idle.gif" },
+            { name: "Dragão Jovem", hp: 500, dmg: 40, agi: 15, xp: 300, gold: 200, img: "https://media.tenor.com/Q28gG7-gC4QAAAAj/dragon-flying.gif" }
+        ];
+
+        let currentUser = null;
+        let playerData = { gold: 0, level: 1, xp: 0 };
+        let rpgData = { class: null, inventory: [], equipped: { weapon: null, armor: null }, hpCurrent: 100, deathTimestamp: 0 };
+        
+        let currentEnemy = null;
+        let calculatedStats = { str: 0, int: 0, agi: 0, maxHp: 100 };
+        let battleStats = { damageDealt: 0 };
+        let isPlayerTurn = true;
+
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(err => alert(err.message));
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-screen').style.display = 'none';
+                loadUserData();
+            }
+        });
+
+        function loadUserData() {
+            const userRef = ref(db, 'users/' + currentUser.uid);
+            onValue(userRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                playerData.gold = data.gold || 0;
+                playerData.level = data.level || 1;
+                playerData.xp = data.xp || 0;
+                
+                document.getElementById('goldDisplay').textContent = playerData.gold;
+                document.getElementById('headerLevelBadge').textContent = "Nvl " + playerData.level;
+                
+                if(data.avatar) document.getElementById('charAvatar').src = data.avatar;
+                else document.getElementById('charAvatar').src = currentUser.photoURL;
+                
+                if(!data.rpg || !data.rpg.class) {
+                    document.getElementById('class-selection').style.display = 'flex';
+                } else {
+                    document.getElementById('game-container').style.display = 'grid';
+                    rpgData = data.rpg;
+                    if(!rpgData.inventory) rpgData.inventory = [];
+                    if(!rpgData.equipped) rpgData.equipped = {};
+                    if(rpgData.hpCurrent === undefined) rpgData.hpCurrent = 100;
+                    
+                    checkDeathCooldown();
+                    renderUI();
+                }
+            });
+        }
+
+        // --- SISTEMA DE MORTE E COOLDOWN ---
+        function checkDeathCooldown() {
+            const btn = document.getElementById('btnEnterDungeon');
+            const msg = document.getElementById('dungeonStatusMsg');
+            
+            if(rpgData.deathTimestamp) {
+                const now = Date.now();
+                const diff = now - rpgData.deathTimestamp;
+                const oneHour = 3600000;
+                
+                if(diff < oneHour) {
+                    const timeLeft = Math.ceil((oneHour - diff) / 60000);
+                    btn.classList.add('dead');
+                    btn.innerHTML = `<i class="fa-solid fa-skull"></i> MORTO (${timeLeft}m)`;
+                    btn.onclick = null;
+                    msg.innerHTML = `<span style="color:#ff5555">Você morreu em combate! Espere ${timeLeft} minutos para reviver.</span>`;
+                } else {
+                    const updates = {};
+                    updates[`users/${currentUser.uid}/rpg/deathTimestamp`] = 0;
+                    updates[`users/${currentUser.uid}/rpg/hpCurrent`] = calculatedStats.maxHp; 
+                    update(ref(db), updates);
+                }
+            } else {
+                btn.classList.remove('dead');
+                btn.onclick = window.startDungeon;
+            }
+        }
+
+        window.startDungeon = function() {
+            if(rpgData.hpCurrent <= 0) { alert("Você está sem vida! Cure-se ou espere."); return; }
+            document.getElementById('dungeon-start').style.display = 'none';
+            const stage = document.getElementById('battleStage');
+            stage.style.opacity = 1;
+            stage.style.pointerEvents = 'all';
+            document.querySelector('.enemy-container').style.display = 'block';
+            document.querySelector('.battle-actions').style.display = 'flex';
+            spawnMonster();
+        }
+
+        window.resetDungeon = function() {
+            document.getElementById('result-modal').style.display = 'none';
+            const stage = document.getElementById('battleStage');
+            stage.style.opacity = 0;
+            stage.style.pointerEvents = 'none';
+            document.getElementById('dungeon-start').style.display = 'flex';
+        }
+
+        function spawnMonster() {
+            battleStats.damageDealt = 0;
+            isPlayerTurn = true;
+            toggleButtons(true);
+            const index = Math.floor(Math.random() * MONSTERS_DB.length);
+            const baseMonster = MONSTERS_DB[index];
+            currentEnemy = { ...baseMonster, maxHp: baseMonster.hp, currentHp: baseMonster.hp };
+            updateEnemyUI();
+            const log = document.getElementById('battleLog');
+            log.innerHTML = ''; 
+            addLog(`Você entrou na Dungeon...`, '#ccc');
+            addLog(`Um <b>${currentEnemy.name}</b> selvagem apareceu!`, 'white');
+        }
+
+        function updateEnemyUI() {
+            document.getElementById('enemyName').textContent = currentEnemy.name;
+            document.getElementById('enemyImage').src = currentEnemy.img;
+            const pct = (currentEnemy.currentHp / currentEnemy.maxHp) * 100;
+            document.getElementById('enemyHpBar').style.width = pct + "%";
+            document.getElementById('enemyHpText').textContent = `${Math.floor(currentEnemy.currentHp)}/${currentEnemy.maxHp}`;
+        }
+
+        function toggleButtons(enable) {
+            const btns = document.querySelectorAll('.btn-action');
+            btns.forEach(b => {
+                if(enable) b.classList.remove('disabled');
+                else b.classList.add('disabled');
+            });
+        }
+
+        window.attackMonster = function() {
+            if(!isPlayerTurn || !currentEnemy || currentEnemy.currentHp <= 0) return;
+            isPlayerTurn = false;
+            toggleButtons(false); 
+            const img = document.getElementById('enemyImage');
+            img.classList.add('enemy-hit');
+            setTimeout(() => img.classList.remove('enemy-hit'), 150);
+
+            let baseDamage = 0;
+            if(rpgData.class === 'mage') baseDamage = calculatedStats.int * 1.5;
+            else if(rpgData.class === 'rogue') baseDamage = calculatedStats.agi * 1.2 + calculatedStats.str * 0.5;
+            else baseDamage = calculatedStats.str * 1.2;
+
+            let finalDamage = Math.floor(baseDamage * (0.9 + Math.random() * 0.2));
+            const critChance = calculatedStats.agi / 100; 
+            let isCrit = Math.random() < critChance;
+            if(isCrit) finalDamage = Math.floor(finalDamage * 2);
+
+            const missChance = (currentEnemy.agi / 100) * 0.5;
+            let isMiss = Math.random() < missChance;
+
+            if(isMiss) {
+                showFloatingText("ERROU", "miss", false);
+                addLog(`Você atacou mas o ${currentEnemy.name} desviou!`, '#aaa');
+            } else {
+                currentEnemy.currentHp -= finalDamage;
+                battleStats.damageDealt += finalDamage; 
+                showFloatingText(finalDamage, isCrit ? "crit" : "normal", false);
+                addLog(`Causou <b>${finalDamage}</b> de dano.`, isCrit ? 'gold' : 'var(--primary)');
+            }
+            updateEnemyUI();
+
+            if(currentEnemy.currentHp <= 0) {
+                currentEnemy.currentHp = 0;
+                setTimeout(handleVictory, 500);
+            } else {
+                setTimeout(monsterTurn, 1500);
+            }
+        };
+
+        function monsterTurn() {
+            if(currentEnemy.currentHp <= 0) return;
+            addLog(`${currentEnemy.name} está preparando um ataque...`, '#ff5555');
+            setTimeout(() => {
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+                const enemyDmg = Math.floor(currentEnemy.dmg * (0.8 + Math.random() * 0.4));
+                rpgData.hpCurrent -= enemyDmg;
+                if(rpgData.hpCurrent < 0) rpgData.hpCurrent = 0;
+                update(ref(db, `users/${currentUser.uid}/rpg/hpCurrent`), rpgData.hpCurrent);
+                renderUI();
+                showFloatingText(enemyDmg, "normal", true); 
+                addLog(`${currentEnemy.name} te acertou! -${enemyDmg} HP`, '#ff5555');
+                if(rpgData.hpCurrent <= 0) {
+                    handleDefeat();
+                } else {
+                    isPlayerTurn = true;
+                    toggleButtons(true); 
+                }
+            }, 800);
+        }
+
+        function handleVictory() {
+            addLog(`<b>${currentEnemy.name}</b> foi derrotado!`, '#04d361');
+            const xpGained = currentEnemy.xp;
+            const goldGained = currentEnemy.gold;
+            let newXp = playerData.xp + xpGained;
+            let newGold = playerData.gold + goldGained;
+            let newLevel = playerData.level;
+            let levelUp = false;
+            const xpToNext = newLevel * 150;
+            if (newXp >= xpToNext) {
+                newLevel++;
+                newXp = newXp - xpToNext;
+                levelUp = true;
+                rpgData.hpCurrent = calculatedStats.maxHp; 
+            }
+            update(ref(db, 'users/' + currentUser.uid), {
+                gold: newGold,
+                xp: newXp,
+                level: newLevel,
+                "rpg/hpCurrent": rpgData.hpCurrent
+            }).then(() => {
+                showResultModal("VITÓRIA!", xpGained, goldGained, battleStats.damageDealt, currentEnemy.name, levelUp, false);
+            });
+        }
+
+        function handleDefeat() {
+            const deathTime = Date.now();
+            update(ref(db, `users/${currentUser.uid}/rpg/deathTimestamp`), deathTime);
+            showResultModal("VOCÊ MORREU", 0, 0, battleStats.damageDealt, currentEnemy.name, false, true);
+        }
+
+        function showResultModal(title, xp, gold, dmg, mob, levelUp, isDefeat) {
+            const content = document.getElementById('resultContent');
+            content.className = isDefeat ? 'result-content defeat' : 'result-content';
+            let html = `
+                ${levelUp ? '<div class="levelup-tag">LEVEL UP!</div>' : ''}
+                <div class="result-title" style="color:${isDefeat ? '#ff5555' : 'var(--gold)'}">${title}</div>
+                <div class="result-stat"><span>Dano:</span> <span style="color:#ff5555">${dmg}</span></div>
+                <div class="result-stat"><span>Inimigo:</span> <span style="color:#fff">${mob}</span></div>
+            `;
+            if(!isDefeat) {
+                html += `
+                <div class="loot-row">
+                    <span style="color:var(--gold)"><i class="fa-solid fa-coins"></i> +${gold}</span>
+                    <span style="color:#04d361"><i class="fa-solid fa-star"></i> +${xp}</span>
+                </div>`;
+            } else {
+                html += `<div style="margin:20px 0; color:#aaa;">Você caiu em batalha. Retorne em 1 hora.</div>`;
+            }
+            html += `<button class="btn-action" onclick="window.resetDungeon()" style="width:100%; margin-top:10px;">${isDefeat ? 'SAIR' : 'CONTINUAR'}</button>`;
+            content.innerHTML = html;
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        function showFloatingText(text, type, isPlayerDamage) {
+            const container = isPlayerDamage ? document.querySelector('.col-char') : document.querySelector('.enemy-container');
+            const el = document.createElement('div');
+            el.textContent = isPlayerDamage ? `-${text}` : text;
+            el.className = isPlayerDamage ? 'dmg-number dmg-player' : 'dmg-number';
+            if(!isPlayerDamage) {
+                if(type === 'crit') el.classList.add('dmg-crit');
+                if(type === 'miss') el.classList.add('dmg-miss');
+            }
+            el.style.left = '50%';
+            el.style.top = '30%';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        window.addLog = function(msg, color) {
+            const log = document.getElementById('battleLog');
+            const p = document.createElement('div');
+            p.className = 'log-entry';
+            p.style.borderLeftColor = color;
+            p.innerHTML = `<span style="color:${color}; font-size:0.85rem;">${new Date().toLocaleTimeString()}</span> <span style="color:#ddd">${msg}</span>`;
+            log.prepend(p);
+        };
+
+        // --- LÓGICA DE CLASSE E TROCA ---
+        window.openClassSelector = function() {
+            document.getElementById('class-selection').style.display = 'flex';
+        };
+
+        window.chooseClass = function(className) {
+            if(confirm(`Tem certeza que deseja mudar para ${CLASSES[className].name}?`)) {
+                // Pega dados atuais para não perder inventário
+                get(ref(db, `users/${currentUser.uid}/rpg`)).then((snapshot) => {
+                    const currentData = snapshot.val() || {};
+                    let inventory = currentData.inventory || [];
+                    let equipped = currentData.equipped || {};
+                    
+                    // Se for novo (inventory vazio), dá o kit inicial + Faca de Pão
+                    if(inventory.length === 0 && !equipped.weapon) {
+                        inventory.push('w_breadknife'); // Item UNIVERSAL
+                        if(className === 'warrior') inventory.push('w_sword1');
+                        if(className === 'mage') inventory.push('w_staff1');
+                        if(className === 'rogue') inventory.push('w_dagger1');
+                    } else {
+                        // LÓGICA DE TROCA DE CLASSE (UNEQUIP INCOMPATÍVEIS)
+                        ['weapon', 'armor'].forEach(slot => {
+                            const itemId = equipped[slot];
+                            if(itemId) {
+                                const item = ITEMS_DB[itemId];
+                                if(item.class !== 'all' && item.class !== className) {
+                                    inventory.push(itemId);
+                                    equipped[slot] = null;
+                                    alert(`${item.name} foi removido pois não serve para ${CLASSES[className].name}!`);
+                                }
+                            }
+                        });
+                    }
+
+                    update(ref(db, `users/${currentUser.uid}/rpg`), {
+                        class: className,
+                        inventory: inventory,
+                        equipped: equipped
+                    }).then(() => {
+                        document.getElementById('class-selection').style.display = 'none';
+                    });
+                });
+            }
+        };
+
+        function renderUI() {
+            const cls = CLASSES[rpgData.class];
+            document.getElementById('charName').textContent = currentUser.displayName.split(' ')[0];
+            const badge = document.getElementById('charClassBadge');
+            badge.textContent = cls.name;
+            badge.style.background = cls.color;
+
+            let totalStr = cls.str + (playerData.level * 2);
+            let totalInt = cls.int + (playerData.level * 2);
+            let totalAgi = cls.agi + (playerData.level * 2);
+            let maxHP = Math.floor(100 * cls.hpMod) + (playerData.level * 10);
+
+            if(rpgData.equipped.weapon) {
+                const item = ITEMS_DB[rpgData.equipped.weapon];
+                totalStr += item.str || 0;
+                totalInt += item.int || 0;
+                totalAgi += item.agi || 0;
+            }
+            if(rpgData.equipped.armor) {
+                const item = ITEMS_DB[rpgData.equipped.armor];
+                maxHP += item.hp || 0;
+                if(item.int) totalInt += item.int;
+                if(item.agi) totalAgi += item.agi;
+            }
+
+            calculatedStats = { str: totalStr, int: totalInt, agi: totalAgi, maxHp: maxHP };
+            
+            document.getElementById('statSTR').textContent = totalStr;
+            document.getElementById('statINT').textContent = totalInt;
+            document.getElementById('statAGI').textContent = totalAgi;
+            document.getElementById('statHP').textContent = `${Math.floor(rpgData.hpCurrent)}/${maxHP}`;
+            document.getElementById('statMP').textContent = `${totalInt * 5}/${totalInt * 5}`;
+            
+            const hpPct = (rpgData.hpCurrent / maxHP) * 100;
+            document.getElementById('playerHpBar').style.width = Math.max(0, hpPct) + "%";
+
+            renderInventory();
+            renderSlot('weapon', rpgData.equipped.weapon);
+            renderSlot('armor', rpgData.equipped.armor);
+            renderShop();
+        }
+
+        function renderInventory() {
+            const invGrid = document.getElementById('inventoryGrid');
+            invGrid.innerHTML = '';
+            rpgData.inventory.forEach((itemId, index) => {
+                const item = ITEMS_DB[itemId];
+                if(!item) return;
+                const div = document.createElement('div');
+                div.className = 'inv-item';
+                div.innerHTML = `<i class="fa-solid ${item.icon}" style="color: ${getClassColor(item.class)}"></i>`;
+                div.onmouseenter = (e) => showTooltip(e, item);
+                div.onmouseleave = hideTooltip;
+                div.onclick = () => equipItem(itemId, index);
+                invGrid.appendChild(div);
+            });
+        }
+
+        function renderSlot(type, itemId) {
+            const slot = document.getElementById('slot-' + type);
+            if(itemId) {
+                const item = ITEMS_DB[itemId];
+                slot.className = 'equip-slot filled';
+                slot.innerHTML = `<i class="fa-solid ${item.icon}" style="font-size:2rem; color:white"></i>`;
+                slot.onmouseenter = (e) => showTooltip(e, item);
+                slot.onmouseleave = hideTooltip;
+            } else {
+                slot.className = 'equip-slot';
+                slot.innerHTML = `<i class="fa-solid ${type === 'weapon' ? 'fa-khanda' : 'fa-shield-cat'}"></i>`;
+                slot.onmouseenter = null;
+            }
+        }
+
+        function getClassColor(cls) {
+            if(cls === 'warrior') return '#ff5555';
+            if(cls === 'mage') return '#8257e6';
+            if(cls === 'rogue') return '#04d361';
+            return '#fff';
+        }
+
+        window.equipItem = function(itemId, index) {
+            const item = ITEMS_DB[itemId];
+            if(item.class !== 'all' && item.class !== rpgData.class) { alert(`Apenas para ${CLASSES[item.class].name}s!`); return; }
+            if(item.type === 'consumable') {
+                if(item.effect === 'heal') {
+                    if(rpgData.hpCurrent >= calculatedStats.maxHp) { alert("Vida cheia!"); return; }
+                    rpgData.hpCurrent += item.val;
+                    if(rpgData.hpCurrent > calculatedStats.maxHp) rpgData.hpCurrent = calculatedStats.maxHp;
+                    const newInv = [...rpgData.inventory];
+                    newInv.splice(index, 1);
+                    update(ref(db, `users/${currentUser.uid}/rpg`), { hpCurrent: rpgData.hpCurrent, inventory: newInv });
+                    renderUI();
+                    alert("Poção usada!");
+                }
+                return;
+            }
+            const type = item.type;
+            const currentEquipped = rpgData.equipped[type];
+            const newInv = [...rpgData.inventory];
+            newInv.splice(index, 1);
+            if(currentEquipped) newInv.push(currentEquipped);
+
+            const updates = {};
+            updates[`users/${currentUser.uid}/rpg/inventory`] = newInv;
+            updates[`users/${currentUser.uid}/rpg/equipped/${type}`] = itemId;
+            update(ref(db), updates);
+        };
+
+        window.unequipItem = function(type) {
+            if(!rpgData.equipped[type]) return;
+            const itemId = rpgData.equipped[type];
+            const newInv = [...rpgData.inventory, itemId];
+            const updates = {};
+            updates[`users/${currentUser.uid}/rpg/inventory`] = newInv;
+            updates[`users/${currentUser.uid}/rpg/equipped/${type}`] = null;
+            update(ref(db), updates);
+        };
+
+        function renderShop() {
+            const list = document.getElementById('shopList');
+            list.innerHTML = '';
+            Object.keys(ITEMS_DB).forEach(key => {
+                const item = ITEMS_DB[key];
+                if(item.class !== 'all' && item.class !== rpgData.class) return;
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                let rarityColor = 'white';
+                if(item.rarity === 'rare') rarityColor = '#0070dd';
+                if(item.rarity === 'epic') rarityColor = '#a335ee';
+                
+                div.innerHTML = `
+                    <div style="font-size:1.5rem; width:40px; text-align:center;"><i class="fa-solid ${item.icon}"></i></div>
+                    <div class="shop-info">
+                        <div style="font-weight:bold; color:${rarityColor}">${item.name}</div>
+                        <div style="font-size:0.8rem; color:#888;">${item.type.toUpperCase()} | +${item.str || 0} FOR +${item.int || 0} INT</div>
+                    </div>
+                    <div class="shop-price">${item.price} <i class="fa-solid fa-coins"></i></div>
+                    <button class="btn-buy" onclick="window.buyItem('${key}')">Comprar</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        window.buyItem = function(itemKey) {
+            const item = ITEMS_DB[itemKey];
+            if(playerData.gold < item.price) { alert("Ouro insuficiente!"); return; }
+            if(confirm(`Comprar ${item.name} por ${item.price} Ouro?`)) {
+                const newGold = playerData.gold - item.price;
+                const newInv = [...(rpgData.inventory || []), itemKey];
+                const updates = {};
+                updates[`users/${currentUser.uid}/gold`] = newGold;
+                updates[`users/${currentUser.uid}/rpg/inventory`] = newInv;
+                update(ref(db), updates).then(() => alert("Compra realizada!"));
+            }
+        };
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        const tooltip = document.getElementById('tooltip');
+        window.showTooltip = function(e, item) {
+            let rarityColor = "#fff";
+            if(item.rarity === 'rare') rarityColor = "#0070dd";
+            if(item.rarity === 'epic') rarityColor = "#a335ee";
+            let statsHtml = '';
+            if(item.str) statsHtml += `<div>+${item.str} Força</div>`;
+            if(item.int) statsHtml += `<div>+${item.int} Inteligência</div>`;
+            if(item.agi) statsHtml += `<div>+${item.agi} Agilidade</div>`;
+            if(item.hp) statsHtml += `<div>+${item.hp} Vida Max</div>`;
+
+            tooltip.innerHTML = `
+                <div class="tt-name" style="color:${rarityColor}">${item.name}</div>
+                <div class="tt-desc">${item.type} - ${CLASSES[item.class] ? CLASSES[item.class].name : 'Todos'}</div>
+                <div class="tt-stats">${statsHtml || 'Sem atributos'}</div>
+                <div style="margin-top:5px; color:gold; font-size:0.7rem;">Valor: ${item.price}$</div>
+            `;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        };
+        window.hideTooltip = function() { tooltip.style.display = 'none'; };
+        document.addEventListener('mousemove', (e) => {
+            if(tooltip.style.display === 'block') {
+                tooltip.style.left = (e.pageX + 15) + 'px';
+                tooltip.style.top = (e.pageY + 15) + 'px';
+            }
+        });
+    </script>
+</body>
+</html>
